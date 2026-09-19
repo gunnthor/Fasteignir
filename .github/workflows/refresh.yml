@@ -1,0 +1,57 @@
+name: Refresh official property data
+on:
+  schedule:
+    - cron: "20 6 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: data-refresh-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run ingest
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Verify production build in browser
+        run: |
+          npm start -- --port 3001 > /tmp/fasteign-server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3001/api/explore > /dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:e2e
+  deploy:
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.ENABLE_PRODUCTION_DEPLOYMENT == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run ingest
+      - run: npx --yes vercel@54.18.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - run: npx --yes vercel@54.18.0 build --prod --token="$VERCEL_TOKEN"
+      - run: npx --yes vercel@54.18.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN"

@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2026-09-19T17:49:45.418Z",
+  "training": {
+    "from": "2020-09-01",
+    "toExclusive": "2025-09-01",
+    "n": 32024,
+    "registrationCutoff": "2025-09-01"
+  },
+  "test": {
+    "from": "2025-09-01",
+    "toExclusive": "2026-09-01",
+    "n": 5340
+  },
+  "model": "Ridge regression of log(price), alpha=1; log(area), rooms, build year, sale date, property type, municipality and postcode",
+  "baseline": "Same-postcode comparable sales; fixed training snapshot, no future training transactions, subject property excluded",
+  "hedonicAll": {
+    "n": 5340,
+    "mae": 12129500.258391794,
+    "medianAbsolutePercentageError": 12.386286329124676
+  },
+  "paired": {
+    "n": 5281,
+    "hedonic": {
+      "n": 5281,
+      "mae": 11972348.050373664,
+      "medianAbsolutePercentageError": 12.37586533800354
+    },
+    "baseline": {
+      "n": 5281,
+      "mae": 7963238.893233975,
+      "medianAbsolutePercentageError": 6.279761904761903
+    }
+  },
+  "baselineCoverage": 0.9889513108614232,
+  "empiricalIntervalCoverage": 0.790759325885249,
+  "byArea": {
+    "Reykjavík": {
+      "hedonic": {
+        "n": 2831,
+        "mae": 11326828.953116447,
+        "medianAbsolutePercentageError": 12.081671409553914
+      },
+      "baseline": {
+        "n": 2831,
+        "mae": 7585930.892954541,
+        "medianAbsolutePercentageError": 6.59755422474963
+      }
+    },
+    "Kópavogur": {
+      "hedonic": {
+        "n": 812,
+        "mae": 13385927.414004324,
+        "medianAbsolutePercentageError": 14.054504306008322
+      },
+      "baseline": {
+        "n": 812,
+        "mae": 8099595.717985755,
+        "medianAbsolutePercentageError": 6.475422694162549
+      }
+    },
+    "Hafnarfjörður": {
+      "hedonic": {
+        "n": 795,
+        "mae": 11339244.413788402,
+        "medianAbsolutePercentageError": 12.630639821484804
+      },
+      "baseline": {
+        "n": 795,
+        "mae": 7078540.985930125,
+        "medianAbsolutePercentageError": 5.292127455436043
+      }
+    },
+    "Mosfellsbær": {
+      "hedonic": {
+        "n": 227,
+        "mae": 10864226.830969647,
+        "medianAbsolutePercentageError": 8.987084998301556
+      },
+      "baseline": {
+        "n": 227,
+        "mae": 6982756.646082975,
+        "medianAbsolutePercentageError": 4.130820387778793
+      }
+    },
+    "Seltjarnarnes": {
+      "hedonic": {
+        "n": 89,
+        "mae": 16204396.691930134,
+        "medianAbsolutePercentageError": 10.211166785437669
+      },
+      "baseline": {
+        "n": 89,
+        "mae": 13768351.58530871,
+        "medianAbsolutePercentageError": 7.887800424497564
+      }
+    },
+    "Garðabær": {
+      "hedonic": {
+        "n": 527,
+        "mae": 13979647.291092305,
+        "medianAbsolutePercentageError": 11.908080128174307
+      },
+      "baseline": {
+        "n": 527,
+        "mae": 10556571.87977618,
+        "medianAbsolutePercentageError": 6.927109179193093
+      }
+    }
+  },
+  "byType": {
+    "apartment": {
+      "hedonic": {
+        "n": 4593,
+        "mae": 11015853.765498256,
+        "medianAbsolutePercentageError": 12.735760134843998
+      },
+      "baseline": {
+        "n": 4593,
+        "mae": 6759033.190604308,
+        "medianAbsolutePercentageError": 5.930480163370739
+      }
+    },
+    "house": {
+      "hedonic": {
+        "n": 688,
+        "mae": 18357781.55390982,
+        "medianAbsolutePercentageError": 9.670208156964634
+      },
+      "baseline": {
+        "n": 688,
+        "mae": 16002362.137678606,
+        "medianAbsolutePercentageError": 8.659359211178664
+      }
+    }
+  },
+  "byPriceBand": {
+    "<60m": {
+      "hedonic": {
+        "n": 940,
+        "mae": 8838431.301173935,
+        "medianAbsolutePercentageError": 12.252172689427683
+      },
+      "baseline": {
+        "n": 940,
+        "mae": 4814253.653347567,
+        "medianAbsolutePercentageError": 5.675390539673511
+      }
+    },
+    "60–100m": {
+      "hedonic": {
+        "n": 3122,
+        "mae": 11023833.096533282,
+        "medianAbsolutePercentageError": 13.6280706296756
+      },
+      "baseline": {
+        "n": 3122,
+        "mae": 5334427.651224768,
+        "medianAbsolutePercentageError": 5.367045956107175
+      }
+    },
+    ">=100m": {
+      "hedonic": {
+        "n": 1219,
+        "mae": 16818242.578788474,
+        "medianAbsolutePercentageError": 9.09203470713537
+      },
+      "baseline": {
+        "n": 1219,
+        "mae": 17124186.246019788,
+        "medianAbsolutePercentageError": 9.821710007880217
+      }
+    }
+  },
+  "deployed": false,
+  "limitations": [
+    "One holdout period, no hyperparameter tuning or rolling-origin validation.",
+    "Source is a present-day revised snapshot, not a historical as-known archive. Registration cutoff reduces but cannot eliminate revision hindsight.",
+    "Fixed training snapshot makes comparables older toward holdout end.",
+    "Missing rooms/build-year targets excluded. No outcome-dependent full-dataset tail filtering.",
+    "Paired comparison reports only properties where baseline can return a result.",
+    "No public production hedonic model promotion; independent validation still needed."
+  ]
+}

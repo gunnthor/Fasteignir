@@ -1,0 +1,44 @@
+{
+  "name": "fasteign",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "ingest": "node --import tsx scripts/fetch-kaupskra.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "predev": "node scripts/copy-map-worker.mjs",
+    "prebuild": "node scripts/check-data.mjs && node scripts/copy-map-worker.mjs",
+    "evaluate": "node --import tsx scripts/evaluate-model.ts",
+    "format": "prettier --write app components lib scripts tests *.ts *.json *.md .github/workflows/*.yml",
+    "format:check": "prettier --check app components lib scripts tests *.ts *.json *.md .github/workflows/*.yml"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "5.3.0",
+    "@fontsource-variable/manrope": "5.3.0",
+    "@turf/boolean-point-in-polygon": "7.4.0",
+    "csv-parse": "7.0.2",
+    "lucide-react": "1.47.0",
+    "maplibre-gl": "6.10.0",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "recharts": "3.10.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/geojson": "7946.0.16",
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "prettier": "3.9.8",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

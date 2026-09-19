@@ -1,0 +1,6 @@
+data/raw/
+data/processed/audit.json.gz
+data/evaluation/
+tests/
+test-results/
+playwright-report/

@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.env*
+!.env.example
+data/raw/
+data/processed/*.gz
+*.tsbuildinfo
+test-results/
+playwright-report/
+
+public/maplibre/
+
+# Regenerate locally; do not publish property-derived reports.
+data/processed/report.json

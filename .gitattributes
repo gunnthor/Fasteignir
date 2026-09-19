@@ -1,0 +1,2 @@
+# Preserve the byte-exact Windows-1252/CRLF source-format fixture.
+tests/fixtures/kaupskra.csv -text -diff
