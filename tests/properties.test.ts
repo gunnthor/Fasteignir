@@ -68,3 +68,60 @@ test("a selected apartment cannot become its own comparable", () => {
     ) > 0,
   );
 });
+
+test("house-number searches exclude other buildings and identifier substrings", () => {
+  const rows = buildPropertyIndex(
+    [
+      { ...sale, address: "Bæjarlind 5", propertyId: "2000001" },
+      { ...sale, address: "Bæjarlind 5", propertyId: "2000002" },
+      { ...sale, address: "Bæjarlind 15", propertyId: "2000003" },
+      { ...sale, address: "Bæjarlind 50", propertyId: "2000004" },
+      { ...sale, address: "Bæjarlind 7", propertyId: "2500005" },
+    ],
+    [
+      { fepilog: "010101" },
+      { fepilog: "010102" },
+      { fepilog: "010103" },
+      { fepilog: "010104" },
+      { fepilog: "010105" },
+    ],
+  );
+  assert.equal(searchProperties(rows, "Bæjarlind").total, 5);
+  assert.deepEqual(
+    searchProperties(rows, "Bæjarlind 5").properties.map((p) => p.propertyId),
+    ["2000001", "2000002"],
+  );
+  assert.equal(searchProperties(rows, "Bæjarlind 5 200").total, 2);
+  assert.equal(searchProperties(rows, "Bæjarlind 1").total, 0);
+  assert.equal(
+    searchProperties(rows, "2500005").properties[0].address,
+    "Bæjarlind 7",
+  );
+  assert.equal(
+    searchProperties(rows, "010105").properties[0].address,
+    "Bæjarlind 7",
+  );
+});
+test("explicit house-number suffixes distinguish buildings", () => {
+  const rows = buildPropertyIndex(
+    [
+      { ...sale, address: "Þórsgata 5A", propertyId: "2000001" },
+      { ...sale, address: "Þórsgata 5 B", propertyId: "2000002" },
+      { ...sale, address: "Þórsgata 15A", propertyId: "2000003" },
+    ],
+    [{}, {}, {}],
+  );
+  assert.equal(searchProperties(rows, "thorsgata 5").total, 2);
+  assert.equal(
+    searchProperties(rows, "Þórsgata 5 B").properties[0].propertyId,
+    "2000002",
+  );
+  assert.equal(
+    searchProperties(rows, "Þórsgata 5a").properties[0].propertyId,
+    "2000001",
+  );
+  assert.equal(
+    searchProperties(rows, "Þórsgata 5b").properties[0].propertyId,
+    "2000002",
+  );
+});

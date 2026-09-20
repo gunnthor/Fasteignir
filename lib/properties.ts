@@ -60,14 +60,31 @@ export function searchProperties(
   query: string,
   limit = 25,
 ) {
-  const words = fold(query.trim()).split(/\s+/);
-  const matches = rows.filter((p) =>
-    words.every((w) =>
-      fold(
-        `${p.address} ${p.postcode} ${p.municipalityName} ${p.propertyId} ${p.unitCode}`,
-      ).includes(w),
-    ),
-  );
+  const words = fold(query.trim())
+    .replace(/(\d+)\s+([a-z])\b/g, "$1$2")
+    .split(/\s+/);
+  const matches = rows.filter((p) => {
+    const address = fold(p.address).replace(/(\d+)\s+([a-z])\b/g, "$1$2");
+    const houseNumbers = address.match(/\d+[a-z]?/g) ?? [];
+    const location = `${address} ${fold(p.municipalityName)}`;
+    return words.every((word) => {
+      if (/^\d+[a-z]?$/.test(word)) {
+        // Numbers must match a complete address number or an exact identifier,
+        // never a digit buried inside another apartment's fastanúmer/unit code.
+        return (
+          houseNumbers.some((number) =>
+            /^\d+$/.test(word)
+              ? number.replace(/[a-z]$/, "") === word
+              : number === word,
+          ) ||
+          word === p.postcode ||
+          word === p.propertyId ||
+          word === p.unitCode
+        );
+      }
+      return location.includes(word);
+    });
+  });
   return {
     properties: matches.slice(0, limit),
     total: matches.length,
