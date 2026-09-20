@@ -222,7 +222,7 @@ export function Explorer({ dashboard = false }: { dashboard?: boolean }) {
             }));
           }}
         >
-          <option value="postcode">Póstsvæði höfuðborgarsvæðisins</option>
+          <option value="postcode">Póstsvæði</option>
           <option value="district">Borgarhlutar Reykjavíkur</option>
         </select>
       </label>
@@ -322,7 +322,7 @@ export function Explorer({ dashboard = false }: { dashboard?: boolean }) {
         value={filters.municipality}
         onChange={(e) => update("municipality", e.target.value)}
       >
-        <option value="">Allt höfuðborgarsvæðið</option>
+        <option value="">Öll sveitarfélög</option>
         {Object.entries(MUNICIPALITIES).map(([k, v]) => (
           <option key={k} value={k}>
             {v}

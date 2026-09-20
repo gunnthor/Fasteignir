@@ -27,15 +27,15 @@ export function TrendChart({
       />
       <XAxis
         dataKey="month"
-        tick={{ fontSize: 10, fill: "var(--muted)" }}
+        tick={{ fontSize: "0.875rem", fill: "var(--muted)" }}
         tickFormatter={(s) => s.slice(2).replace("-", "/")}
-        minTickGap={30}
+        minTickGap={40}
         axisLine={false}
         tickLine={false}
       />
       <YAxis
-        width={42}
-        tick={{ fontSize: 10, fill: "var(--muted)" }}
+        width={54}
+        tick={{ fontSize: "0.875rem", fill: "var(--muted)" }}
         tickFormatter={(v) => num(kind === "ppm" ? v / 1000 : v)}
         axisLine={false}
         tickLine={false}

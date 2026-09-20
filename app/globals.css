@@ -4,12 +4,14 @@
   --bg: #f3f5f1;
   --panel: #fff;
   --text: #223a33;
-  --muted: #7b8882;
+  --muted: #53665d;
   --line: #e5eae5;
   --accent: #2e715c;
   --soft: #edf3ee;
   --shadow: 0 8px 40px #18382d0c;
   --header: 80px;
+  --font-small: 0.875rem;
+  --font-body: 1rem;
   color-scheme: light;
 }
 :root[data-theme="dark"] {
@@ -31,7 +33,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: "DM Sans Variable", system-ui, sans-serif;
-  font-size: 14px;
+  font-size: var(--font-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 button,
@@ -86,18 +89,18 @@ h3,
   font-family: "Manrope Variable", system-ui, sans-serif;
 }
 h1 {
-  font-size: 30px;
+  font-size: 1.875rem;
   line-height: 1.24;
   font-weight: 750;
   letter-spacing: -1.2px;
 }
 h2 {
-  font-size: 25px;
+  font-size: 1.5625rem;
   line-height: 1.25;
   letter-spacing: -1px;
 }
 h3 {
-  font-size: 14px;
+  font-size: var(--font-body);
   font-weight: 750;
 }
 input,
@@ -114,13 +117,13 @@ input {
 select {
   padding: 12px 32px 12px 12px;
   width: 100%;
-  font-size: 12px;
+  font-size: var(--font-body);
 }
 small {
-  font-size: 10px;
+  font-size: var(--font-small);
 }
 label {
-  font-size: 12px;
+  font-size: var(--font-small);
 }
 .skip {
   position: fixed;
@@ -150,7 +153,7 @@ label {
   align-items: center;
   gap: 11px;
   font-weight: 800;
-  font-size: 25px;
+  font-size: 1.5625rem;
   letter-spacing: -1px;
 }
 .brand-icon {
@@ -164,7 +167,7 @@ label {
 }
 .brand small {
   display: block;
-  font-size: 9px;
+  font-size: var(--font-small);
   font-family: "DM Sans Variable", sans-serif;
   font-weight: 500;
   letter-spacing: 0.7px;
@@ -176,7 +179,7 @@ label {
   align-items: center;
   gap: 32px;
   height: 100%;
-  font-size: 12px;
+  font-size: var(--font-small);
   font-weight: 600;
 }
 .header nav a {
@@ -215,7 +218,7 @@ label {
   display: flex;
   align-items: center;
   gap: 15px;
-  font-size: 11px;
+  font-size: var(--font-small);
   font-weight: 600;
   border: 1px solid var(--line);
   padding: 12px 14px;
@@ -246,7 +249,7 @@ label {
   left: 322px !important;
 }
 .maplibregl-ctrl-attrib {
-  font-size: 9px !important;
+  font-size: var(--font-small) !important;
 }
 .maplibregl-popup-content {
   background: var(--panel) !important;
@@ -258,13 +261,13 @@ label {
   font-family: inherit;
 }
 .maplibregl-popup-content strong {
-  font-size: 14px;
+  font-size: var(--font-body);
 }
 .maplibregl-popup-tip {
   border-top-color: var(--panel) !important;
 }
 .sale-popup {
-  font-size: 11px;
+  font-size: var(--font-small);
 }
 .sale-popup strong {
   display: block;
@@ -294,14 +297,14 @@ label {
   color: var(--muted);
 }
 .eyebrow {
-  font-size: 9px;
+  font-size: var(--font-small);
   font-weight: 700;
   letter-spacing: 1.7px;
   color: var(--muted);
 }
 .intro {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--font-small);
   line-height: 1.8;
   margin-top: 12px;
 }
@@ -312,7 +315,7 @@ label {
 }
 .field-label {
   display: block;
-  font-size: 11px;
+  font-size: var(--font-small);
   font-weight: 650;
   margin: 19px 0 9px;
 }
@@ -324,7 +327,7 @@ label {
 .period-grid button {
   border: 1px solid var(--line);
   border-radius: 7px;
-  font-size: 11px;
+  font-size: var(--font-small);
   padding: 9px 4px;
 }
 .period-grid button:last-child {
@@ -346,10 +349,10 @@ label {
   gap: 2px;
 }
 .segmented button {
-  font-size: 10px;
+  font-size: var(--font-small);
   flex: 1;
   padding: 9px 3px;
-  white-space: nowrap;
+  white-space: normal;
   border-radius: 6px;
   color: var(--muted);
 }
@@ -364,7 +367,7 @@ label {
   align-items: center;
   gap: 8px;
   width: 100%;
-  font-size: 11px;
+  font-size: var(--font-small);
   padding: 18px 0 0;
 }
 .advanced-button span {
@@ -372,18 +375,18 @@ label {
 }
 .range {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
   margin-top: 12px;
 }
 .range label {
-  font-size: 10px;
+  font-size: var(--font-small);
   color: var(--muted);
 }
 .range input {
   width: 100%;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: var(--font-body);
   padding: 8px 5px;
 }
 .advanced label {
@@ -398,7 +401,7 @@ label {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--font-small);
 }
 .switch-row span {
   display: flex;
@@ -415,7 +418,7 @@ label {
   padding: 12px 10px;
   margin-top: 20px;
   border-radius: 8px;
-  font-size: 10px;
+  font-size: var(--font-small);
   font-weight: 600;
 }
 .source-badge small {
@@ -423,7 +426,7 @@ label {
   padding: 5px 0 0 13px;
   color: var(--muted);
   font-weight: 400;
-  font-size: 9px;
+  font-size: var(--font-small);
 }
 .live-dot {
   display: inline-block;
@@ -439,7 +442,7 @@ label {
   align-items: center;
   gap: 6px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--font-small);
   margin-top: 16px;
 }
 .search-bar {
@@ -468,13 +471,14 @@ label {
   background: transparent;
   padding: 0;
   flex: 1;
-  font-size: 11px;
+  font-size: var(--font-body);
 }
 .search-bar input::placeholder {
   color: var(--muted);
 }
 .search-hint {
-  font-size: 8px;
+  display: none;
+  font-size: var(--font-small);
   white-space: nowrap;
   color: var(--muted);
   border: 1px solid var(--line);
@@ -485,7 +489,7 @@ label {
   position: absolute;
   top: 38px;
   left: 540px;
-  font-size: 10px;
+  font-size: var(--font-small);
   display: flex;
   align-items: center;
   background: var(--panel);
@@ -506,7 +510,6 @@ label {
   max-height: calc(100% - 45px);
   overflow: auto;
   scrollbar-width: thin;
-  transition: opacity 0.2s;
 }
 .summary-heading {
   display: flex;
@@ -517,7 +520,7 @@ label {
 }
 .caption {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--font-small);
   margin-top: 7px;
 }
 .hero-stat {
@@ -526,24 +529,24 @@ label {
 .hero-stat > span {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--font-small);
 }
 .hero-stat > strong {
   display: block;
   font-family: "Manrope Variable", sans-serif;
-  font-size: 31px;
+  font-size: 1.9375rem;
   letter-spacing: -1.2px;
   font-weight: 750;
   margin: 5px 0 8px;
   white-space: nowrap;
 }
 .hero-stat > small {
-  font-size: 10px;
+  font-size: var(--font-small);
   color: var(--muted);
 }
 .stat-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 18px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -555,20 +558,20 @@ label {
 }
 .stat-grid span {
   display: block;
-  font-size: 9px;
+  font-size: var(--font-small);
   color: var(--muted);
   margin-bottom: 5px;
 }
 .stat-grid strong {
   font-family: "Manrope Variable", sans-serif;
-  font-size: 18px;
+  font-size: 1.125rem;
   letter-spacing: -0.5px;
 }
 .green {
   color: var(--accent);
 }
 .micro {
-  font-size: 9px;
+  font-size: var(--font-small);
   color: var(--muted);
   line-height: 1.6;
   margin-top: 9px;
@@ -580,7 +583,7 @@ label {
   margin: 24px 0 12px;
 }
 .section-title > span {
-  font-size: 9px;
+  font-size: var(--font-small);
   color: var(--muted);
 }
 .chart {
@@ -595,7 +598,7 @@ label {
   margin-top: 5px;
 }
 .area-tabs button {
-  font-size: 9px;
+  font-size: var(--font-small);
   color: var(--muted);
   padding: 8px 0;
 }
@@ -614,17 +617,17 @@ label {
   text-align: left;
 }
 .area-row strong {
-  font-size: 11px;
+  font-size: var(--font-small);
   font-weight: 550;
 }
 .area-row small {
   display: block;
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--font-small);
   margin-top: 3px;
 }
 .area-row > span:last-child {
-  font-size: 10px;
+  font-size: var(--font-small);
   font-weight: 650;
   display: flex;
   align-items: center;
@@ -635,7 +638,7 @@ label {
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 9px;
+  font-size: var(--font-small);
   color: var(--muted);
   line-height: 1.5;
   margin-top: 18px;
@@ -647,12 +650,12 @@ label {
   background: var(--soft);
   padding: 16px;
   border-radius: 11px;
-  font-size: 12px;
+  font-size: var(--font-small);
   line-height: 1.7;
   margin-top: 19px;
 }
 .estimate-link strong {
-  font-size: 14px;
+  font-size: var(--font-body);
 }
 .map-legend {
   position: absolute;
@@ -666,7 +669,7 @@ label {
   box-shadow: var(--shadow);
 }
 .map-legend strong {
-  font-size: 10px;
+  font-size: var(--font-small);
   font-weight: 600;
 }
 .legend-colors {
@@ -682,10 +685,10 @@ label {
 .legend-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: var(--font-small);
 }
 .map-legend small {
-  font-size: 8px;
+  font-size: var(--font-small);
   color: var(--muted);
   display: block;
   margin-top: 9px;
@@ -703,7 +706,7 @@ label {
   display: flex;
   gap: 8px;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--font-small);
 }
 .spinner {
   height: 12px;
@@ -719,7 +722,7 @@ label {
   }
 }
 .updating {
-  opacity: 0.65;
+  cursor: progress;
 }
 .skeleton {
   background: linear-gradient(100deg, var(--soft), var(--panel), var(--soft));
@@ -742,7 +745,7 @@ label {
   top: 85px;
   left: 330px;
   max-width: 420px;
-  font-size: 12px;
+  font-size: var(--font-small);
   background: var(--panel);
   padding: 18px;
   border: 1px solid #c89070;
@@ -772,18 +775,19 @@ label {
   background: var(--soft);
   padding: 12px;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: var(--font-small);
   line-height: 1.6;
   margin: 12px 0;
 }
 .sale-card {
   border-bottom: 1px solid var(--line);
-  padding: 14px 0;
+  padding: 20px 0;
 }
 .sale-card summary {
-  display: flex;
-  align-items: center;
-  gap: 9px;
+  display: grid;
+  grid-template-columns: 29px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px 12px;
   cursor: pointer;
   list-style: none;
 }
@@ -806,22 +810,36 @@ label {
 .sale-description strong,
 .sale-price strong {
   display: block;
-  font-size: 10px;
+  font-size: var(--font-body);
   font-weight: 600;
 }
 .sale-description > span,
 .sale-price > span {
-  font-size: 8px;
+  font-size: var(--font-small);
   display: block;
   margin-top: 4px;
   color: var(--muted);
 }
 .sale-price {
-  text-align: right;
-  white-space: nowrap;
+  grid-column: 2;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-variant-numeric: tabular-nums;
+}
+.sale-price strong {
+  font-size: 1.125rem;
+  font-weight: 750;
+}
+.sale-price > span {
+  margin-top: 0;
+}
+.sale-description strong {
+  overflow-wrap: anywhere;
 }
 .sale-expanded {
-  font-size: 11px;
+  font-size: var(--font-small);
   color: var(--muted);
   line-height: 1.8;
   padding: 15px 5px 4px;
@@ -838,19 +856,19 @@ label {
   padding: 0;
 }
 .typical strong {
-  font-size: 16px;
+  font-size: var(--font-body);
 }
 .typical small {
   display: block;
   color: var(--muted);
   margin-top: 4px;
-  font-size: 8px;
+  font-size: var(--font-small);
 }
 .text-button {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--font-small);
   color: var(--accent);
   padding: 12px 0;
 }
@@ -859,7 +877,7 @@ label {
   text-align: center;
 }
 .empty h2 {
-  font-size: 20px;
+  font-size: 1.25rem;
   margin: 15px;
 }
 .empty p {
@@ -880,7 +898,7 @@ label {
   margin: auto;
 }
 .market-content > h1 {
-  font-size: 38px;
+  font-size: 2.375rem;
   margin-top: 15px;
 }
 .market-summary {
@@ -888,7 +906,7 @@ label {
   margin-top: 28px;
 }
 .market-summary h2 {
-  font-size: 21px;
+  font-size: 1.3125rem;
 }
 .market-summary .hero-stat {
   display: inline-block;
@@ -906,7 +924,7 @@ label {
 }
 .market-charts {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 18px;
   margin: 20px 0;
 }
@@ -921,7 +939,7 @@ label {
 }
 .market-tables {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 18px;
   margin: 20px 0;
 }
@@ -937,12 +955,12 @@ label {
 table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 11px;
+  font-size: var(--font-body);
   white-space: nowrap;
 }
 th {
   text-align: left;
-  font-size: 9px;
+  font-size: var(--font-small);
   color: var(--muted);
   font-weight: 500;
 }
@@ -966,11 +984,11 @@ th:not(:first-child) {
   line-height: 1.9;
 }
 .reading-page h1 {
-  font-size: 42px;
+  font-size: 2.625rem;
   margin: 15px 0 25px;
 }
 .reading-page h2 {
-  font-size: 22px;
+  font-size: 1.375rem;
   margin: 35px 0 12px;
 }
 .reading-page p {
@@ -996,17 +1014,17 @@ th:not(:first-child) {
   padding: 0 25px 80px;
 }
 .estimate-page > h1 {
-  font-size: 44px;
+  font-size: 2.75rem;
   max-width: 650px;
   margin: 18px 0;
 }
 .estimate-page > .intro {
-  font-size: 15px;
+  font-size: var(--font-body);
   max-width: 560px;
 }
 .estimate-layout {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
   gap: 25px;
   margin-top: 35px;
   align-items: start;
@@ -1018,14 +1036,14 @@ th:not(:first-child) {
   display: block;
   margin: 20px 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--font-small);
 }
 .estimate-form input,
 .estimate-form select {
   display: block;
   width: 100%;
   margin-top: 8px;
-  font-size: 14px;
+  font-size: var(--font-body);
 }
 .primary-button {
   display: flex;
@@ -1037,18 +1055,18 @@ th:not(:first-child) {
   background: var(--accent);
   color: var(--panel);
   border-radius: 9px;
-  font-size: 13px;
+  font-size: var(--font-small);
   font-weight: 600;
 }
 .estimate-result {
   padding: 30px;
 }
 .estimate-result h2 {
-  font-size: 23px;
+  font-size: 1.4375rem;
 }
 .estimate-range {
   font-family: "Manrope Variable", sans-serif;
-  font-size: 37px;
+  font-size: 2.3125rem;
   font-weight: 750;
   letter-spacing: -1.5px;
   margin: 15px 0;
@@ -1058,7 +1076,7 @@ th:not(:first-child) {
   padding: 6px 10px;
   background: var(--soft);
   border-radius: 20px;
-  font-size: 10px;
+  font-size: var(--font-small);
   margin: 5px 0 20px;
 }
 .explanation {
@@ -1068,7 +1086,7 @@ th:not(:first-child) {
 }
 .explanation h2 {
   color: var(--text);
-  font-size: 22px;
+  font-size: 1.375rem;
 }
 .explanation ol {
   padding-left: 20px;
@@ -1078,7 +1096,7 @@ th:not(:first-child) {
 }
 .no-data {
   padding: 25px;
-  font-size: 13px;
+  font-size: var(--font-small);
   color: var(--muted);
 }
 :root[data-theme="dark"] .map-canvas .maplibregl-canvas {
@@ -1148,10 +1166,10 @@ th:not(:first-child) {
     right: 363px !important;
   }
   .hero-stat > strong {
-    font-size: 28px;
+    font-size: 1.75rem;
   }
   .stat-grid strong {
-    font-size: 16px;
+    font-size: var(--font-body);
   }
   .dashboard {
     padding-left: 295px;
@@ -1168,7 +1186,7 @@ th:not(:first-child) {
     padding: 0 16px;
   }
   .brand {
-    font-size: 22px;
+    font-size: 1.375rem;
   }
   .brand-icon {
     width: 34px;
@@ -1176,7 +1194,7 @@ th:not(:first-child) {
   }
   .header nav {
     gap: 17px;
-    font-size: 11px;
+    font-size: var(--font-small);
   }
   .header-actions {
     gap: 0;
@@ -1212,7 +1230,7 @@ th:not(:first-child) {
     align-items: center;
     gap: 7px;
     z-index: 16;
-    font-size: 11px;
+    font-size: var(--font-small);
   }
   .controls {
     display: none;
@@ -1267,27 +1285,19 @@ th:not(:first-child) {
     gap: 30px;
   }
   .area-tabs button {
-    font-size: 11px;
+    font-size: var(--font-small);
   }
   .area-row strong {
-    font-size: 13px;
+    font-size: var(--font-small);
   }
   .area-row > span:last-child {
-    font-size: 12px;
+    font-size: var(--font-small);
   }
   .area-row small {
-    font-size: 10px;
-  }
-  .sale-description strong,
-  .sale-price strong {
-    font-size: 12px;
-  }
-  .sale-description > span,
-  .sale-price > span {
-    font-size: 10px;
+    font-size: var(--font-small);
   }
   .coverage {
-    font-size: 10px;
+    font-size: var(--font-small);
   }
   .loading-pill {
     top: 78px;
@@ -1308,10 +1318,10 @@ th:not(:first-child) {
     top: 76px;
   }
   .market-content > h1 {
-    font-size: 32px;
+    font-size: 2rem;
   }
   .estimate-layout {
-    grid-template-columns: 310px 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px;
   }
   .estimate-form {
@@ -1321,7 +1331,7 @@ th:not(:first-child) {
     padding: 22px;
   }
   .estimate-range {
-    font-size: 28px;
+    font-size: 1.75rem;
   }
 }
 @media (max-width: 600px) {
@@ -1334,7 +1344,7 @@ th:not(:first-child) {
     padding-top: 12px;
   }
   .brand {
-    font-size: 22px;
+    font-size: 1.375rem;
   }
   .header nav {
     position: absolute;
@@ -1344,7 +1354,7 @@ th:not(:first-child) {
     height: 38px;
     justify-content: space-between;
     gap: 10px;
-    font-size: 11px;
+    font-size: var(--font-small);
   }
   .header-actions {
     margin-top: 2px;
@@ -1356,7 +1366,7 @@ th:not(:first-child) {
     height: 430px;
   }
   .search-bar input {
-    font-size: 10px;
+    font-size: var(--font-body);
   }
   .mobile-filter-button {
     gap: 4px;
@@ -1376,7 +1386,7 @@ th:not(:first-child) {
     padding-bottom: 17px;
   }
   .details .hero-stat > strong {
-    font-size: 35px;
+    font-size: 2.1875rem;
   }
   .details .stat-grid:not(.typical) {
     display: grid;
@@ -1386,19 +1396,19 @@ th:not(:first-child) {
     border-bottom: 1px solid var(--line);
   }
   .stat-grid span {
-    font-size: 10px;
+    font-size: var(--font-small);
   }
   .stat-grid strong {
-    font-size: 19px;
+    font-size: 1.1875rem;
   }
   .micro {
-    font-size: 10px;
+    font-size: var(--font-small);
   }
   .map-legend {
     width: 193px;
   }
   .market-content > h1 {
-    font-size: 29px;
+    font-size: 1.8125rem;
   }
   .market-summary {
     padding: 20px;
@@ -1428,23 +1438,23 @@ th:not(:first-child) {
     margin-top: 35px;
   }
   .reading-page h1 {
-    font-size: 33px;
+    font-size: 2.0625rem;
   }
   .estimate-page {
     margin-top: 30px;
     padding: 0 20px 60px;
   }
   .estimate-page > h1 {
-    font-size: 34px;
+    font-size: 2.125rem;
   }
   .estimate-layout {
     grid-template-columns: 1fr;
   }
   .estimate-page > .intro {
-    font-size: 13px;
+    font-size: var(--font-small);
   }
   .estimate-range {
-    font-size: 36px;
+    font-size: 2.25rem;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1471,7 +1481,7 @@ th:not(:first-child) {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 12px;
-  font-size: 12px;
+  font-size: var(--font-small);
   line-height: 1.8;
   box-shadow: var(--shadow);
 }
@@ -1505,4 +1515,85 @@ th:not(:first-child) {
   border-bottom: 1px solid #a3b7ae66;
   padding-bottom: 15px;
   margin-bottom: 20px;
+}
+
+/* Keep important values readable as panels narrow or text is enlarged. */
+.stat-grid > div,
+.market-charts > article,
+.market-tables > article,
+.estimate-layout > * {
+  min-width: 0;
+}
+.section-title {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.stat-grid strong,
+.hero-stat > strong {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.sale-expanded a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.property-choice {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.estimate-form .range label {
+  margin-top: 0;
+}
+input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+@media (max-width: 600px) {
+  .controls {
+    width: min(320px, calc(100% - 32px));
+  }
+  .area-tabs {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .stat-grid {
+    gap: 12px;
+  }
+  .stat-grid > div + div {
+    padding-left: 12px;
+  }
+  .map-legend {
+    width: 235px;
+  }
+}
+@media (max-width: 900px) {
+  .header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    height: auto;
+    gap: 8px 16px;
+    padding: 12px 16px 0;
+  }
+  .header nav {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    height: auto;
+    min-height: 44px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 16px;
+  }
+  .header nav a {
+    min-height: 44px;
+  }
+  .header-actions {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+}
+.reading-page {
+  overflow-wrap: anywhere;
 }
