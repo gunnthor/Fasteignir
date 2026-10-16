@@ -1,6 +1,8 @@
 "use client";
 import {
   ResponsiveContainer,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -9,6 +11,7 @@ import {
   Bar,
   LineChart,
   Line,
+  ReferenceLine,
 } from "recharts";
 import { num, numberIS } from "@/lib/format";
 
@@ -156,6 +159,133 @@ export function DistributionChart({
               isAnimationActive={false}
             />
           ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// Share of historical sales at or below each budget level, chosen budget marked.
+export function BudgetCurveChart({
+  data,
+  budget,
+}: {
+  data: { budget: number; share: number | null }[];
+  budget: number;
+}) {
+  return (
+    <div
+      className="chart"
+      role="img"
+      aria-label="Hlutfall seldra eigna á eða undir hverri fjárhæð"
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data}>
+          {grid}
+          <defs>
+            <linearGradient id="gradient-budget" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#388e7d" stopOpacity={0.25} />
+              <stop offset="100%" stopColor="#388e7d" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <XAxis
+            dataKey="budget"
+            type="number"
+            domain={["dataMin", "dataMax"]}
+            tick={axis}
+            tickFormatter={(v) => num(v / 1e6)}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            width={44}
+            tick={axis}
+            domain={[0, 100]}
+            tickFormatter={(v) => `${num(v)}%`}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const row = payload[0].payload as (typeof data)[number];
+              return (
+                <div className="chart-tooltip">
+                  <strong>Allt að {num(row.budget / 1e6)} m.kr.</strong>
+                  <p>
+                    {row.share === null
+                      ? "Ófullnægjandi gögn"
+                      : `${numberIS(row.share, 1)}% seldra eigna`}
+                  </p>
+                </div>
+              );
+            }}
+          />
+          <ReferenceLine
+            x={budget}
+            stroke="var(--text)"
+            strokeDasharray="4 3"
+            strokeWidth={1.5}
+          />
+          <Area
+            type="monotone"
+            dataKey="share"
+            stroke="#388e7d"
+            fill="url(#gradient-budget)"
+            strokeWidth={2}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export function SizeChart({
+  data,
+}: {
+  data: { label: string; count: number }[];
+}) {
+  return (
+    <div
+      className="chart"
+      role="img"
+      aria-label="Stærð seldra eigna innan fjárhæðar"
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data}>
+          {grid}
+          <XAxis
+            dataKey="label"
+            tick={axis}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            width={44}
+            tick={axis}
+            allowDecimals={false}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip
+            cursor={{ fill: "var(--soft)" }}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              return (
+                <div className="chart-tooltip">
+                  <strong>{String(label)} m²</strong>
+                  <p>{num(payload[0].payload.count)} sölur</p>
+                </div>
+              );
+            }}
+          />
+          <Bar
+            dataKey="count"
+            fill="var(--accent)"
+            radius={[4, 4, 0, 0]}
+            isAnimationActive={false}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

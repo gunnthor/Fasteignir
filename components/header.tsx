@@ -62,6 +62,7 @@ export function Header() {
           ["/", strings.map],
           ["/markadur", strings.market],
           ["/samanburdur", strings.compare],
+          ["/kaupgeta", strings.budget],
           ["/verdmat", strings.estimate],
           ["/um-gognin", strings.about],
         ].map(([href, label]) => (

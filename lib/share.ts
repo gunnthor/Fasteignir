@@ -206,3 +206,32 @@ export function scopeTo(f: FilterState, a: AreaRef): FilterState {
     district: a.kind === "district" ? a.id : "",
   };
 }
+
+// Total budget in ISK, whole millions between 5 and 1.000 m.kr.
+export function parseBudget(s: string) {
+  if (!/^\d{1,10}$/.test(s)) return null;
+  const n = +s;
+  return n >= 5_000_000 && n <= 1_000_000_000 ? n : null;
+}
+
+// "Hvar hafa selst 3 herbergja íbúðir á 75 m.kr. eða minna síðustu 12 mánuði?"
+export function question(f: FilterState, budget: number) {
+  const rooms = f.rooms ? `${f.rooms === "5" ? "5+" : f.rooms} herbergja ` : "",
+    kind =
+      f.type === "apartment"
+        ? "íbúðir í fjölbýli"
+        : f.type === "house"
+          ? "sérbýli"
+          : "íbúðir",
+    when =
+      f.months === "custom"
+        ? `${date(f.from)} – ${date(f.to)}`
+        : f.months === "0"
+          ? "frá upphafi skráningar"
+          : f.months === "24"
+            ? "síðustu 2 ár"
+            : f.months === "60"
+              ? "síðustu 5 ár"
+              : `síðustu ${f.months} mánuði`;
+  return `Hvar hafa selst ${rooms}${kind} á ${numberIS(budget / 1e6)} m.kr. eða minna ${when}?`;
+}

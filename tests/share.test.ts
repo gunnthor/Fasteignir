@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { decodeCSV, normalizeSale } from "../lib/data";
 import { parseFilters } from "../lib/analytics";
+import { budgetView } from "../lib/budget";
 import { compare } from "../lib/compare";
 import { notModified, sparkPath } from "../lib/card";
 import { sqm, year } from "../lib/format";
@@ -10,7 +11,9 @@ import {
   apiParams,
   filterSummary,
   parseArea,
+  parseBudget,
   parseView,
+  question,
   serializeView,
   DEFAULT_FILTERS,
 } from "../lib/share";
@@ -77,7 +80,7 @@ test("card summaries name every active restriction", () => {
     ["Sérbýli", "5+ herbergi", "≥ 1.000 m²", "leit: „Laugavegur“"],
   );
 });
-test("area parameters are validated", () => {
+test("area and budget parameters are validated", () => {
   assert.deepEqual(parseArea("postcode:107"), { kind: "postcode", id: "107" });
   assert.deepEqual(parseArea("district:4. Laugardalur"), {
     kind: "district",
@@ -85,6 +88,9 @@ test("area parameters are validated", () => {
   });
   assert.equal(parseArea("postcode:1a7"), null);
   assert.equal(parseArea("municipality:9999"), null);
+  assert.equal(parseBudget("75000000"), 75000000);
+  assert.equal(parseBudget("-5"), null);
+  assert.equal(parseBudget("1000"), null);
 });
 test("comparison is suppressed when either side has fewer than five sales", () => {
   const rows = [
@@ -111,6 +117,33 @@ test("comparison is suppressed when either side has fewer than five sales", () =
   assert.equal(Math.round(bins.reduce((n, x) => n + x.a, 0)), 100);
   assert.equal(Math.round(bins.reduce((n, x) => n + x.b, 0)), 100);
 });
+test("budget shares and within-budget statistics respect sample protections", () => {
+  const rows = [
+    ...many(6, { price: 60_000_000 }),
+    ...many(4, { price: 90_000_000 }),
+    ...many(3, { postcode: "108", price: 50_000_000 }),
+  ];
+  const v = budgetView(rows, DEFAULT_FILTERS, 75_000_000, today);
+  assert.equal(v.overall.count, 13);
+  assert.equal(v.overall.within, 9);
+  assert.equal(Math.round(v.overall.share!), 69);
+  assert.equal(v.level, "municipality");
+  const scoped = budgetView(
+    rows,
+    { ...DEFAULT_FILTERS, municipality: "0000" },
+    75_000_000,
+    today,
+  );
+  const small = scoped.areas.find((a) => a.id === "108")!;
+  assert.equal(small.share, null);
+  assert.equal(small.area, null);
+  const big = scoped.areas.find((a) => a.id === "101")!;
+  assert.equal(big.share, 60);
+  assert.equal(big.area, sale.area);
+  const curve = v.curve!;
+  assert.equal(curve.at(-1)!.share, 100);
+  assert.ok(curve.every((c, i) => !i || c.share >= curve[i - 1].share));
+});
 test("sparklines skip suppressed months instead of drawing through them", () => {
   assert.equal(sparkPath([null, 1], 100, 10), "");
   assert.equal(sparkPath([1, 2, null, 3], 30, 10).match(/M/g)!.length, 2);
@@ -130,4 +163,10 @@ test("years are not digit-grouped and missing sizes have no unit", () => {
   assert.equal(year(null), "—");
   assert.equal(sqm(null), "—");
   assert.equal(sqm(1200), "1.200 m²");
+});
+test("the budget question reads as a complete Icelandic sentence", () => {
+  assert.equal(
+    question({ ...DEFAULT_FILTERS, rooms: "3", type: "apartment" }, 75e6),
+    "Hvar hafa selst 3 herbergja íbúðir í fjölbýli á 75 m.kr. eða minna síðustu 12 mánuði?",
+  );
 });

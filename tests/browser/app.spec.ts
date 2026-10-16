@@ -288,3 +288,28 @@ test("comparison shows composition and suppresses thin sides", async ({
   expect(thin.distribution).toBeNull();
   expect((await request.get("/api/compare?a=postcode:107")).status()).toBe(400);
 });
+test("budget search drills down and never implies current availability", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/kaupgeta?budget=75000000&rooms=3");
+  await expect(page.locator("h1")).toHaveText(
+    "Hvar hafa selst 3 herbergja íbúðir á 75 m.kr. eða minna síðustu 12 mánuði?",
+  );
+  await expect(page.getByRole("note")).toContainText(
+    "ekki eignir sem eru til sölu í dag",
+  );
+  await page.locator(".budget-areas button", { hasText: "Kópavogur" }).click();
+  await expect(page).toHaveURL(/municipality=1000/);
+  await expect(page.locator(".budget-areas h3")).toHaveText(
+    "Eftir póstnúmerum",
+  );
+  await page.getByLabel("Hámarksverð í milljónum króna").fill("90");
+  await expect(page).toHaveURL(/budget=90000000/);
+  const d = await (
+    await request.get("/api/budget?budget=75000000&rooms=3&postcode=116")
+  ).json();
+  if (d.overall.count < 5) expect(d.overall.share).toBeNull();
+  if (d.overall.within < 5) expect(d.overall.area).toBeNull();
+  expect((await request.get("/api/budget?budget=abc")).status()).toBe(400);
+});
