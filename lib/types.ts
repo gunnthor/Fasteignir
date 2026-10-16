@@ -76,6 +76,7 @@ export type Exploration = {
   downloadedAt: string;
   latestSale: string;
   latestRegistration: string;
+  version: string;
   matchedCount: number;
   total: number;
 };

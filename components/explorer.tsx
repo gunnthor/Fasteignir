@@ -25,6 +25,8 @@ import {
   districtName,
   strings,
   numberIS,
+  sqm,
+  year,
 } from "@/lib/format";
 import {
   metricLabels,
@@ -33,6 +35,16 @@ import {
   palette,
   type Metric,
 } from "./map-config";
+import {
+  DEFAULT_FILTERS as initial,
+  DEFAULT_VIEW,
+  PERIODS as periods,
+  areaLabel,
+  serializeView,
+  type View,
+} from "@/lib/share";
+import { SharePanel } from "./share";
+import { syncUrl } from "./filter-bar";
 const SalesMap = dynamic(() => import("./map"), {
   ssr: false,
   loading: () => <div className="map-loading">Hleð korti…</div>,
@@ -41,29 +53,6 @@ const TrendChart = dynamic(() => import("./chart").then((m) => m.TrendChart), {
   ssr: false,
   loading: () => <div className="chart skeleton" />,
 });
-const periods = [
-  ["3", "3 mán."],
-  ["6", "6 mán."],
-  ["12", "12 mán."],
-  ["24", "2 ár"],
-  ["60", "5 ár"],
-  ["0", "Allt"],
-  ["custom", "Velja daga"],
-];
-const initial = {
-  months: "12",
-  type: "all",
-  municipality: "",
-  postcode: "",
-  district: "",
-  minArea: "",
-  maxArea: "",
-  rooms: "",
-  minBuilt: "",
-  maxBuilt: "",
-  from: "",
-  to: "",
-};
 export function SaleCard({ sale }: { sale: Sale }) {
   return (
     <details className="sale-card">
@@ -85,7 +74,7 @@ export function SaleCard({ sale }: { sale: Sale }) {
       <div className="sale-expanded">
         <p>
           {sale.type === "house" ? "Sérbýli" : "Fjölbýli"} · Byggt{" "}
-          {num(sale.built)} · {sale.postcode} {sale.municipalityName}
+          {year(sale.built)} · {sale.postcode} {sale.municipalityName}
         </p>
         <p>
           Fasteignamat við sölu: {money(sale.valuation)}
@@ -114,21 +103,31 @@ export function SaleCard({ sale }: { sale: Sale }) {
     </details>
   );
 }
-export function Explorer({ dashboard = false }: { dashboard?: boolean }) {
-  const [filters, setFilters] = useState(initial),
-    [q, setQ] = useState(""),
-    [query, setQuery] = useState(""),
-    [metric, setMetric] = useState<Metric>("ppm"),
+export function Explorer({
+  dashboard = false,
+  initialView = DEFAULT_VIEW,
+}: {
+  dashboard?: boolean;
+  initialView?: View;
+}) {
+  const [filters, setFilters] = useState(initialView.filters),
+    [q, setQ] = useState(initialView.q),
+    [query, setQuery] = useState(initialView.q),
+    [metric, setMetric] = useState<Metric>(initialView.metric),
     [data, setData] = useState<Exploration | null>(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [advanced, setAdvanced] = useState(false),
-    [points, setPoints] = useState(false),
+    [points, setPoints] = useState(initialView.points),
     [mobileFilters, setMobileFilters] = useState(false),
-    [mapLevel, setMapLevel] = useState<"postcode" | "district">("postcode"),
+    [mapLevel, setMapLevel] = useState(initialView.level),
     [tab, setTab] = useState<"district" | "postcode" | "municipality">(
-      "postcode",
+      initialView.level,
     );
+  const view: View = { filters, q: query, metric, level: mapLevel, points };
+  const search = serializeView(view).toString();
+  // Mirror the view into the address bar so any state can be shared or bookmarked.
+  useEffect(() => syncUrl(search), [search]);
   useEffect(() => {
     const timer = setTimeout(() => setQuery(q), 350);
     return () => clearTimeout(timer);
@@ -175,11 +174,7 @@ export function Explorer({ dashboard = false }: { dashboard?: boolean }) {
       ...(key === "postcode" ? { district: "" } : {}),
     }));
   }
-  const selected = filters.district
-    ? districtName(filters.district)
-    : filters.postcode
-      ? `Póstnúmer ${filters.postcode}`
-      : MUNICIPALITIES[filters.municipality] || "Höfuðborgarsvæðið";
+  const selected = areaLabel(filters);
   const areaList = data
     ? tab === "district"
       ? data.areas
@@ -432,17 +427,26 @@ export function Explorer({ dashboard = false }: { dashboard?: boolean }) {
         <span className="eyebrow">
           {filters.district ? "BORGARHLUTI" : "MARKAÐSYFIRLIT"}
         </span>
-        {(filters.district || filters.postcode) && (
-          <button
-            className="icon-button"
-            onClick={() =>
-              setFilters((f) => ({ ...f, district: "", postcode: "" }))
-            }
-            aria-label="Hreinsa svæðisval"
-          >
-            <X size={16} />
-          </button>
-        )}
+        <span className="summary-actions">
+          <SharePanel
+            view={view}
+            path={dashboard ? "/markadur" : "/"}
+            title={selected}
+            range={{ from: data.from, to: data.to }}
+            version={data.version}
+          />
+          {(filters.district || filters.postcode) && (
+            <button
+              className="icon-button"
+              onClick={() =>
+                setFilters((f) => ({ ...f, district: "", postcode: "" }))
+              }
+              aria-label="Hreinsa svæðisval"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </span>
       </div>
       <h2>{selected}</h2>
       <p className="caption">
@@ -590,11 +594,11 @@ export function Explorer({ dashboard = false }: { dashboard?: boolean }) {
                   <div className="stat-grid typical">
                     <div>
                       <span>Dæmigerð stærð</span>
-                      <strong>{num(data.summary.area)} m²</strong>
+                      <strong>{sqm(data.summary.area)}</strong>
                     </div>
                     <div>
                       <span>Byggingarár · miðgildi</span>
-                      <strong>{num(data.summary.built)}</strong>
+                      <strong>{year(data.summary.built)}</strong>
                     </div>
                     <div>
                       <span>Herbergi · miðgildi</span>
@@ -781,7 +785,7 @@ export function Explorer({ dashboard = false }: { dashboard?: boolean }) {
                           <tr key={t.month}>
                             <td>{t.month}</td>
                             <td>{ppm(t.ppm)}</td>
-                            <td>{num(t.area)} m²</td>
+                            <td>{sqm(t.area)}</td>
                             <td>{num(t.count)}</td>
                           </tr>
                         ))}

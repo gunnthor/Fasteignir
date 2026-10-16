@@ -1597,3 +1597,119 @@ input::placeholder {
 .reading-page {
   overflow-wrap: anywhere;
 }
+/* Sharing */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.summary-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.share-button {
+  gap: 6px;
+  font-size: var(--font-small);
+  font-weight: 650;
+  color: var(--accent);
+}
+/* Fixed so it is never clipped by scrolling panels. */
+.share-panel {
+  position: fixed;
+  z-index: 50;
+  top: calc(var(--header) + 16px);
+  right: 16px;
+  width: min(390px, calc(100vw - 32px));
+  max-height: calc(100vh - var(--header) - 32px);
+  overflow: auto;
+  padding: 18px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 16px 50px #18382d26;
+  text-align: left;
+}
+.share-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.share-panel .field-label {
+  margin: 14px 0 6px;
+}
+.share-pin {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 10px;
+  background: var(--soft);
+  border-radius: 8px;
+}
+.share-pin input {
+  margin-top: 4px;
+}
+.share-pin small {
+  display: block;
+  color: var(--muted);
+}
+.share-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.share-row input,
+.share-row textarea {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.8125rem;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--text);
+  resize: none;
+}
+.share-row button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--panel);
+  font-size: var(--font-small);
+  font-weight: 650;
+  white-space: nowrap;
+}
+.share-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 14px;
+  font-size: var(--font-small);
+}
+.share-links a,
+.text-link {
+  color: var(--accent);
+  font-weight: 650;
+  padding: 0;
+  font-size: var(--font-small);
+}
+@media (max-width: 700px) {
+  .share-panel {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: auto;
+    max-height: 80vh;
+    border-radius: 14px 14px 0 0;
+  }
+}

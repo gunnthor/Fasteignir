@@ -8,6 +8,11 @@ export function numberIS(n: number, digits = 0) {
 }
 export const num = (n: number | null | undefined) =>
   n == null ? "—" : numberIS(n);
+// Years are never digit-grouped ("1967", not "1.967").
+export const year = (n: number | null | undefined) =>
+  n == null ? "—" : String(Math.round(n));
+export const sqm = (n: number | null | undefined) =>
+  n == null ? "—" : `${numberIS(n)} m²`;
 export const money = (n: number | null | undefined) =>
   n == null ? "—" : `${numberIS(n / 1e6, 1)} m.kr.`;
 export const ppm = (n: number | null | undefined) =>

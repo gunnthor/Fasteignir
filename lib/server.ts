@@ -4,6 +4,8 @@ import path from "node:path";
 import type { Sale } from "./types";
 type Snapshot = {
   rows: Sale[];
+  // Changes whenever ingestion regenerates the data; used in share-card URLs and ETags.
+  version: string;
   report: {
     generatedAt: string;
     latestSale: string;
@@ -18,9 +20,11 @@ export function getSnapshot(): Promise<Snapshot> {
       readFile(path.join(process.cwd(), "data/processed/sales.json.gz")),
       readFile(path.join(process.cwd(), "data/processed/report.json"), "utf8"),
     ]);
+    const parsed = JSON.parse(report);
     return {
       rows: JSON.parse(gunzipSync(bytes).toString()) as Sale[],
-      report: JSON.parse(report),
+      version: Date.parse(parsed.generatedAt).toString(36),
+      report: parsed,
     };
   })().catch((e) => {
     snapshot = undefined;

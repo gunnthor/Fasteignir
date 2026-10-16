@@ -1,0 +1,183 @@
+// Shareable view state. Isomorphic: imported by client components and server routes,
+// so it must not depend on Node APIs or the data snapshot.
+import { MUNICIPALITIES } from "./municipalities";
+import { date, districtName, numberIS } from "./format";
+
+export const PERIODS: [string, string][] = [
+  ["3", "3 mán."],
+  ["6", "6 mán."],
+  ["12", "12 mán."],
+  ["24", "2 ár"],
+  ["60", "5 ár"],
+  ["0", "Allt"],
+  ["custom", "Velja daga"],
+];
+export const DEFAULT_FILTERS = {
+  months: "12",
+  type: "all",
+  municipality: "",
+  postcode: "",
+  district: "",
+  minArea: "",
+  maxArea: "",
+  rooms: "",
+  minBuilt: "",
+  maxBuilt: "",
+  from: "",
+  to: "",
+};
+export type FilterState = typeof DEFAULT_FILTERS;
+export const METRICS = ["ppm", "price", "count", "change", "ratio"] as const;
+export type View = {
+  filters: FilterState;
+  q: string;
+  metric: (typeof METRICS)[number];
+  level: "postcode" | "district";
+  points: boolean;
+};
+export const DEFAULT_VIEW: View = {
+  filters: DEFAULT_FILTERS,
+  q: "",
+  metric: "ppm",
+  level: "postcode",
+  points: false,
+};
+export type ParamSource =
+  URLSearchParams | Record<string, string | string[] | undefined>;
+
+export function param(source: ParamSource, key: string) {
+  const v = source instanceof URLSearchParams ? source.get(key) : source[key];
+  return ((Array.isArray(v) ? v[0] : v) ?? "").trim();
+}
+const today = () => new Date().toISOString().slice(0, 10);
+function validDate(s: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || s < "1900-01-01" || s > today())
+    return false;
+  const d = new Date(s + "T00:00:00Z");
+  return Number.isFinite(+d) && d.toISOString().slice(0, 10) === s;
+}
+
+// Invalid or inconsistent values fall back to defaults rather than failing:
+// a mangled shared link should still open a sensible view.
+export function parseFilterState(source: ParamSource): FilterState {
+  const get = (k: string) => param(source, k);
+  const int = (k: string, min: number, max: number) => {
+    const s = get(k);
+    return /^\d{1,5}$/.test(s) && +s >= min && +s <= max ? String(+s) : "";
+  };
+  const pair = (a: string, b: string, min: number, max: number) => {
+    const lo = int(a, min, max),
+      hi = int(b, min, max);
+    return lo && hi && +lo > +hi ? ["", ""] : [lo, hi];
+  };
+  const [minArea, maxArea] = pair("minArea", "maxArea", 0, 10000),
+    [minBuilt, maxBuilt] = pair("minBuilt", "maxBuilt", 1000, 2100);
+  let from = get("from"),
+    to = get("to"),
+    months = get("months");
+  if (validDate(from) && validDate(to) && from <= to) months = "custom";
+  else {
+    from = to = "";
+    if (!PERIODS.some(([p]) => p === months) || months === "custom")
+      months = DEFAULT_FILTERS.months;
+  }
+  const municipality = get("municipality");
+  return {
+    months,
+    from,
+    to,
+    type: ["apartment", "house"].includes(get("type")) ? get("type") : "all",
+    municipality: municipality in MUNICIPALITIES ? municipality : "",
+    postcode: /^\d{3}$/.test(get("postcode")) ? get("postcode") : "",
+    district: get("district").slice(0, 80),
+    minArea,
+    maxArea,
+    rooms: int("rooms", 1, 5),
+    minBuilt,
+    maxBuilt,
+  };
+}
+export function parseView(source: ParamSource): View {
+  const metric = param(source, "metric") as View["metric"];
+  return {
+    filters: parseFilterState(source),
+    q: param(source, "q").slice(0, 100),
+    metric: METRICS.includes(metric) ? metric : "ppm",
+    level: param(source, "level") === "district" ? "district" : "postcode",
+    points: param(source, "points") === "1",
+  };
+}
+
+// Writes only non-default values so shared URLs stay short. `pin` replaces a
+// relative period (e.g. last 12 months) with the exact dates currently shown.
+export function serializeFilters(
+  f: FilterState,
+  pin?: { from: string; to: string },
+  p = new URLSearchParams(),
+) {
+  const range = pin ?? (f.months === "custom" ? f : null);
+  if (range?.from && range.to) {
+    p.set("from", range.from);
+    p.set("to", range.to);
+  } else if (f.months !== DEFAULT_FILTERS.months && f.months !== "custom")
+    p.set("months", f.months);
+  for (const key of [
+    "type",
+    "municipality",
+    "postcode",
+    "district",
+    "rooms",
+    "minArea",
+    "maxArea",
+    "minBuilt",
+    "maxBuilt",
+  ] as const)
+    if (f[key] && f[key] !== DEFAULT_FILTERS[key]) p.set(key, f[key]);
+  return p;
+}
+export function serializeView(v: View, pin?: { from: string; to: string }) {
+  const p = serializeFilters(v.filters, pin);
+  if (v.q.trim()) p.set("q", v.q.trim());
+  if (v.metric !== "ppm") p.set("metric", v.metric);
+  if (v.level !== "postcode") p.set("level", v.level);
+  if (v.points) p.set("points", "1");
+  return p;
+}
+// Parameters understood by lib/analytics parseFilters.
+export function apiParams(f: FilterState, q = "") {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(f))
+    if (v && !(k === "months" && v === "custom")) p.set(k, v);
+  if (q) p.set("q", q);
+  return p;
+}
+
+export function areaLabel(f: FilterState) {
+  return f.district
+    ? districtName(f.district)
+    : f.postcode
+      ? `Póstnúmer ${f.postcode}`
+      : MUNICIPALITIES[f.municipality] || "Höfuðborgarsvæðið";
+}
+export const typeLabel = (t: string) =>
+  t === "apartment" ? "Fjölbýli" : t === "house" ? "Sérbýli" : "Allar íbúðir";
+export function periodLabel(f: FilterState) {
+  if (f.months === "custom") return `${date(f.from)} – ${date(f.to)}`;
+  if (f.months === "0") return "Öll tímabil";
+  return `Síðustu ${f.months === "24" ? "2 ár" : f.months === "60" ? "5 ár" : `${f.months} mánuðir`}`;
+}
+// Every active non-geographic filter, so a shared card never hides a restriction.
+export function filterSummary(f: FilterState, q = "") {
+  const range = (lo: string, hi: string, fmt = (s: string) => s) =>
+    lo && hi ? `${fmt(lo)}–${fmt(hi)}` : lo ? `≥ ${fmt(lo)}` : `≤ ${fmt(hi)}`;
+  return [
+    typeLabel(f.type),
+    f.rooms && (f.rooms === "5" ? "5+ herbergi" : `${f.rooms} herbergi`),
+    (f.minArea || f.maxArea) &&
+      `${range(f.minArea, f.maxArea, (s) => numberIS(+s))} m²`,
+    (f.minBuilt || f.maxBuilt) && `byggt ${range(f.minBuilt, f.maxBuilt)}`,
+    q && `leit: „${q}“`,
+  ].filter(Boolean) as string[];
+}
+export const NOMINAL_CAVEAT =
+  "Nafnverð, ekki leiðrétt fyrir verðbólgu eða breyttri samsetningu seldra eigna. Ekki opinber verðvísitala.";

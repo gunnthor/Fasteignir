@@ -14,6 +14,7 @@ below is a proposed continuation; the original conversation's priorities are unk
 - Experimental hedonic model evaluation; comparable-sales baseline performed better.
 - Readability improvements (`8359c0e`).
 - Exact house-number matching in apartment search (`1e372b0`).
+- Shareable URL state, Open Graph cards (`/api/card`) and script-free embeds (`/embed`) with sample suppression, period, nominal caveat and data date (16 October 2026).
 
 ## 1. Restore and verify on this PC
 

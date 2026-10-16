@@ -200,3 +200,54 @@ test("lookup distinguishes apartments, prefills details and excludes own sales",
   await expect(page.getByLabel("Stærð í m²")).toHaveValue(String(first.area));
   expect((await request.get("/api/properties?q=a")).status()).toBe(400);
 });
+test("shared views restore filters, publish cards and embeds with caveats", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Fjölbýli", exact: true }).click();
+  await page.getByRole("button", { name: "2 ár", exact: true }).click();
+  await expect(page).toHaveURL(/type=apartment/);
+  await expect(page).toHaveURL(/months=24/);
+  await page.goto("/markadur?postcode=107&type=apartment&rooms=3");
+  await expect(page.locator(".market-summary h2")).toHaveText("Póstnúmer 107");
+  await expect(
+    page.getByRole("button", { name: "Fjölbýli", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Deila" }).click();
+  await expect(page.locator("#share-link")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Deila" })).toBeFocused();
+  await page.getByRole("button", { name: "Deila" }).click();
+  await page.getByText("Festa dagsetningar").click();
+  await expect(page.locator("#share-link")).toHaveValue(/[?&]from=/);
+  await expect(page.locator("#share-embed")).toHaveValue(/&v=/);
+  await expect(page.locator("#share-link")).toHaveValue(
+    /from=\d{4}-\d{2}-\d{2}&to=/,
+  );
+  const og = await page
+    .locator('meta[property="og:image"]')
+    .getAttribute("content");
+  expect(og).toMatch(/\/api\/card\?.*postcode=107.*&v=/);
+  const card = await request.get(new URL(og!).pathname + new URL(og!).search);
+  expect(card.headers()["content-type"]).toBe("image/png");
+  const embed = await request.get("/embed?postcode=107&type=apartment");
+  const html = await embed.text();
+  expect(html).toContain("Nafnverð, ekki leiðrétt fyrir verðbólgu");
+  expect(html).toContain("Gögn sótt");
+  expect(html).toMatch(/\d+\. \w+\.? \d{4} – \d+\. \w+\.? \d{4}/);
+  const tag = embed.headers()["etag"];
+  expect(
+    (
+      await request.get("/embed?postcode=107&type=apartment", {
+        headers: { "If-None-Match": tag },
+      })
+    ).status(),
+  ).toBe(304);
+  const thin = await (
+    await request.get("/embed?postcode=116&months=3&rooms=5")
+  ).text();
+  expect(thin).toContain("Færri en 5 sölur");
+  expect(thin).not.toMatch(/þ\.kr\.\/m²<\/strong>/);
+});
