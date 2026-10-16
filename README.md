@@ -73,6 +73,8 @@ This runs a time-separated ridge hedonic regression against the comparable-sales
 
 ## Remaining product work
 
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the reconstructed roadmap and cross-PC handoff.
+
 Fine-neighborhood geography, a complete current property register, calibrated uncertainty and repeated forward validation remain future iterations. Postcode polygons cover the Capital Region, including Kópavogur, Garðabær, Hafnarfjörður, Seltjarnarnes, Mosfellsbær and Kjósarhreppur. Property lookup covers properties recorded in historical HMS sales; it does not establish current ownership or current condition. English localization has not been implemented; core strings and all formatting helpers are centralized, but further extraction of page copy is needed.
 
 Use `npm run format` / `npm run format:check` for consistent formatting. Do not introduce commercial asking prices into actual-sale metrics or invent missing coordinates.
