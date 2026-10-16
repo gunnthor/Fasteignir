@@ -40,6 +40,7 @@ import {
   DEFAULT_VIEW,
   PERIODS as periods,
   areaLabel,
+  serializeFilters,
   serializeView,
   type View,
 } from "@/lib/share";
@@ -624,6 +625,32 @@ export function Explorer({
                   >
                     <ArrowLeft size={14} /> Til baka í svæðayfirlit
                   </button>
+                  {(filters.district || filters.postcode) && (
+                    <Link
+                      className="text-button"
+                      href={`/samanburdur?${serializeFilters(
+                        {
+                          ...filters,
+                          municipality: "",
+                          postcode: "",
+                          district: "",
+                        },
+                        undefined,
+                        new URLSearchParams({
+                          a: filters.district
+                            ? `district:${filters.district}`
+                            : `postcode:${filters.postcode}`,
+                          b: filters.district
+                            ? "district:4. Laugardalur"
+                            : filters.postcode === "200"
+                              ? "postcode:107"
+                              : "postcode:200",
+                        }),
+                      )}`}
+                    >
+                      <ArrowUpRight size={14} /> Bera saman við annað svæði
+                    </Link>
+                  )}
                 </>
               ) : (
                 <>

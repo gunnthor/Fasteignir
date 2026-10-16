@@ -45,6 +45,7 @@ export const strings = {
   map: "Kort",
   market: "Markaðurinn",
   estimate: "Verðmat",
+  compare: "Samanburður",
   about: "Um gögnin",
   search: "Leita að heimilisfangi, póstnúmeri eða svæði",
   source: "Byggir á upplýsingum frá HMS — Kaupskrá fasteigna",

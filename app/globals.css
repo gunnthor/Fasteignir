@@ -1180,7 +1180,8 @@ th:not(:first-child) {
 }
 @media (max-width: 900px) {
   :root {
-    --header: 72px;
+    /* Fallback until the header measures itself (components/header.tsx). */
+    --header: 122px;
   }
   .header {
     padding: 0 16px;
@@ -1336,7 +1337,7 @@ th:not(:first-child) {
 }
 @media (max-width: 600px) {
   :root {
-    --header: 105px;
+    --header: 122px;
   }
   .header {
     height: 105px;
@@ -1581,12 +1582,22 @@ input::placeholder {
     grid-row: 2;
     height: auto;
     min-height: 44px;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 8px 16px;
+    /* One scrollable row keeps the header height that page layouts assume. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 22px;
+    margin: 0 -16px;
+    padding: 0 32px 0 16px;
+    /* Fade only the end padding, so the last link is unfaded once scrolled to. */
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  }
+  .header nav::-webkit-scrollbar {
+    display: none;
   }
   .header nav a {
     min-height: 44px;
+    flex: none;
   }
   .header-actions {
     grid-column: 2;
@@ -1711,5 +1722,194 @@ input::placeholder {
     width: auto;
     max-height: 80vh;
     border-radius: 14px 14px 0 0;
+  }
+}
+
+/* Comparison and budget views */
+:root {
+  --series-a: #0f7d5f;
+  --series-b: #c9560c;
+}
+:root[data-theme="dark"] {
+  --series-a: #26a679;
+  --series-b: #d4712a;
+}
+.insight-page {
+  max-width: 1100px;
+  margin: 55px auto;
+  padding: 0 25px 80px;
+}
+.insight-page > h1 {
+  font-size: 2.5rem;
+  max-width: 760px;
+  margin: 18px 0 14px;
+}
+.insight-page > .intro {
+  font-size: var(--font-body);
+  max-width: 600px;
+}
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: baseline;
+}
+.swatch-a {
+  background: var(--series-a);
+}
+.swatch-b {
+  background: var(--series-b);
+}
+.compare-pickers {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 14px;
+  padding: 18px;
+  margin-top: 30px;
+}
+.area-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 650;
+}
+.swap-button {
+  height: 46px;
+  width: 46px;
+  border: 1px solid var(--line);
+}
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px 16px;
+  padding: 14px 18px;
+  margin-top: 12px;
+}
+.filter-bar label,
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--font-small);
+  font-weight: 650;
+}
+.filter-bar label input[type="number"] {
+  width: 90px;
+}
+.filter-field .segmented {
+  min-width: 230px;
+}
+.insight-body {
+  margin-top: 22px;
+}
+.insight-body > .caption {
+  margin: 0 0 10px;
+}
+.compare-verdict {
+  padding: 18px 22px;
+}
+.verdict {
+  font-size: 1.25rem;
+  font-family: "Manrope Variable", system-ui, sans-serif;
+  letter-spacing: -0.4px;
+}
+.verdict strong {
+  color: var(--accent);
+}
+.verdict-muted {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--muted);
+}
+.verdict-muted svg {
+  flex: none;
+  margin-top: 4px;
+}
+.compare-sides {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+.compare-side {
+  padding: 22px;
+  border-top: 4px solid var(--series-a);
+}
+.compare-side.side-b {
+  border-top-color: var(--series-b);
+}
+.compare-side h2 {
+  margin-top: 8px;
+  font-size: 1.375rem;
+}
+.compare-side .stat-grid {
+  border-bottom: 0;
+}
+.compare-side .stat-grid > div:nth-child(odd) {
+  border-left: 0;
+  padding-left: 0;
+}
+.compare-side .stat-grid small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  margin-top: 3px;
+}
+.legend-row {
+  display: flex;
+  gap: 20px;
+  margin: 22px 0 10px;
+  font-size: var(--font-small);
+  font-weight: 650;
+}
+.insight-chart {
+  padding: 22px;
+  margin-top: 18px;
+}
+.insight-chart .chart {
+  height: 260px;
+}
+.chart-tooltip .swatch {
+  width: 8px;
+  height: 8px;
+}
+.table-toggle {
+  margin-top: 12px;
+  font-size: var(--font-small);
+}
+.table-toggle summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 650;
+}
+.insight-page > .micro,
+.insight-body > .micro {
+  margin-top: 22px;
+  max-width: 760px;
+}
+@media (max-width: 800px) {
+  .insight-page {
+    margin: 28px auto;
+    padding: 0 16px 60px;
+  }
+  .insight-page > h1 {
+    font-size: 1.75rem;
+  }
+  .compare-pickers {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .swap-button {
+    justify-self: center;
+  }
+  .compare-sides {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .filter-field .segmented {
+    min-width: 0;
   }
 }

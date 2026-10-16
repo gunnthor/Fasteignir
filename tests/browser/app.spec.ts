@@ -84,6 +84,19 @@ test("mobile navigation, filters, dark mode and no horizontal overflow", async (
   await expect(page.locator("#municipality")).toBeVisible();
   await page.locator("#municipality").selectOption("1000");
   await expect(page.locator(".details h2")).toHaveText("Kópavogur");
+  // Layouts size themselves from --header; the nav must not wrap past it.
+  expect(
+    await page.evaluate(
+      () =>
+        document.querySelector(".header")!.getBoundingClientRect().height <=
+        parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            "--header",
+          ),
+        ) +
+          1,
+    ),
+  ).toBe(true);
   await page.getByRole("button", { name: "Nota dökkt útlit" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   expect(
@@ -250,4 +263,28 @@ test("shared views restore filters, publish cards and embeds with caveats", asyn
   ).text();
   expect(thin).toContain("Færri en 5 sölur");
   expect(thin).not.toMatch(/þ\.kr\.\/m²<\/strong>/);
+});
+test("comparison shows composition and suppresses thin sides", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/samanburdur?a=postcode:107&b=postcode:200");
+  await expect(page.locator(".compare-side h2")).toHaveText([
+    "107 Reykjavík",
+    "200 Kópavogur",
+  ]);
+  await expect(page.locator(".verdict")).toContainText(
+    "á svæði A (107 Reykjavík) en á svæði B (200 Kópavogur)",
+  );
+  await expect(page.getByText("Verðdreifing á m²")).toBeVisible();
+  await expect(page.locator(".compare-side").first()).toContainText("fjölbýli");
+  await page.getByRole("button", { name: "Víxla svæðum" }).click();
+  await expect(page).toHaveURL(/a=postcode:200&b=postcode:107/);
+  const thin = await (
+    await request.get("/api/compare?a=postcode:116&b=postcode:107&months=3")
+  ).json();
+  expect(thin.comparable).toBe(false);
+  expect(thin.difference).toBeNull();
+  expect(thin.distribution).toBeNull();
+  expect((await request.get("/api/compare?a=postcode:107")).status()).toBe(400);
 });

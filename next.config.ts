@@ -6,9 +6,9 @@ const config: NextConfig = {
       "./data/processed/properties.json.gz",
       "./data/processed/report.json",
     ],
-    // Pages read the snapshot for share metadata; /embed renders cards.
+    // Pages read the snapshot for share metadata and area lists; /embed renders cards.
     ...Object.fromEntries(
-      ["/", "/markadur", "/embed"].map((r) => [
+      ["/", "/markadur", "/samanburdur", "/embed"].map((r) => [
         r,
         ["./data/processed/sales.json.gz", "./data/processed/report.json"],
       ]),

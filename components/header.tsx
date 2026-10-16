@@ -1,12 +1,32 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, House, Moon, Sun } from "lucide-react";
 import { strings } from "@/lib/format";
 export function Header() {
   const path = usePathname(),
-    [dark, setDark] = useState(false);
+    [dark, setDark] = useState(false),
+    header = useRef<HTMLElement>(null);
+  // Below 900px the header wraps to its content; publish its real height so
+  // layouts sized from --header fit the viewport. Wider, the CSS value is used.
+  useEffect(() => {
+    const el = header.current,
+      root = document.documentElement.style,
+      narrow = matchMedia("(max-width: 900px)");
+    if (!el) return;
+    const update = () =>
+      narrow.matches
+        ? root.setProperty("--header", `${el.offsetHeight}px`)
+        : root.removeProperty("--header");
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    narrow.addEventListener("change", update);
+    return () => {
+      observer.disconnect();
+      narrow.removeEventListener("change", update);
+    };
+  }, []);
   useEffect(() => {
     const d =
       localStorage.getItem("theme") === "dark" ||
@@ -15,6 +35,12 @@ export function Header() {
     setDark(d);
     document.documentElement.dataset.theme = d ? "dark" : "light";
   }, []);
+  // The mobile nav scrolls sideways; keep the current page's link visible.
+  useEffect(() => {
+    document
+      .querySelector(".header nav [aria-current=page]")
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [path]);
   function toggle() {
     const d = !dark;
     setDark(d);
@@ -22,7 +48,7 @@ export function Header() {
     document.documentElement.dataset.theme = d ? "dark" : "light";
   }
   return (
-    <header className="header">
+    <header className="header" ref={header}>
       <Link href="/" className="brand">
         <span className="brand-icon">
           <House size={21} />
@@ -35,6 +61,7 @@ export function Header() {
         {[
           ["/", strings.map],
           ["/markadur", strings.market],
+          ["/samanburdur", strings.compare],
           ["/verdmat", strings.estimate],
           ["/um-gognin", strings.about],
         ].map(([href, label]) => (

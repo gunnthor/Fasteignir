@@ -38,6 +38,7 @@ Optionally set `CHROMIUM_PATH` to an existing Chrome executable. Tests serve a n
 - `/verdmat`: address/fastanúmer lookup with distinct apartment unit references and editable historical details; transparent comparable-sales estimate with range, low/moderate data support, all included comparables and their weights.
 - `/markadur`: monthly rolling price/size charts, monthly volume and comparison tables with sample counts.
 - Shareable views: map and market filters live in the URL (`/markadur?postcode=107&type=apartment&months=24`). The **Deila** panel copies a link, an `<iframe>` code for `/embed` and a PNG card from `/api/card`, optionally pinning a relative period to exact dates. Shared links get per-view Open Graph images. Cards apply the same suppression as the app (no prices under 5 sales, warning under 10) and always state the date range, nominal-price caveat, data download date and latest contract date.
+- `/samanburdur`: two postcodes, districts or municipalities side by side under shared filters, with median price/m², counts, median size and interquartile range, type mix, build year, a shared-bin price/m² distribution and rolling trends. The difference and distribution are withheld unless both sides have at least 5 eligible sales.
 - `/um-gognin`: Icelandic sources, filtering, privacy and limitations.
 - Responsive layout, dark mode, error/loading/empty states and keyboard-accessible geography lists.
 
@@ -53,7 +54,7 @@ Raw/audit files stay local and out of frontend bundles. Server routes load a ~7 
 
 ## Deploy and automatic refresh
 
-The project builds on Vercel. Build only after ingestion; a prebuild guard rejects missing/incomplete snapshots; `next.config.ts` traces `sales.json.gz`, `properties.json.gz` and the report into API functions, and the sales snapshot and report into `/`, `/markadur` and `/embed` (share metadata and cards). MapLibre v6 workers are copied from the installed package by `predev`/`prebuild`, including their shared module. Dependencies are pinned by package manifest and lockfile.
+The project builds on Vercel. Build only after ingestion; a prebuild guard rejects missing/incomplete snapshots; `next.config.ts` traces `sales.json.gz`, `properties.json.gz` and the report into API functions, and the sales snapshot and report into `/`, `/markadur`, `/samanburdur` and `/embed` (share metadata, area lists and cards). MapLibre v6 workers are copied from the installed package by `predev`/`prebuild`, including their shared module. Dependencies are pinned by package manifest and lockfile.
 
 `.github/workflows/refresh.yml` runs daily at 06:20 UTC and manually. It tests, fetches current official data, builds, runs browser tests, and verifies source data without publishing bulk datasets or generated reports. It deploys only when repository variable `ENABLE_PRODUCTION_DEPLOYMENT=true` and Vercel credentials are configured. Required secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. The `production` GitHub environment can carry deployment protection rules. Existing production remains intact if ingestion, build or tests fail.
 

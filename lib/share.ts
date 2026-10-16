@@ -181,3 +181,28 @@ export function filterSummary(f: FilterState, q = "") {
 }
 export const NOMINAL_CAVEAT =
   "Nafnverð, ekki leiðrétt fyrir verðbólgu eða breyttri samsetningu seldra eigna. Ekki opinber verðvísitala.";
+
+// A single geography for comparison: "postcode:107", "district:4. Laugardalur",
+// "municipality:1000".
+export type AreaRef = {
+  kind: "postcode" | "district" | "municipality";
+  id: string;
+};
+export function parseArea(s: string): AreaRef | null {
+  const [kind, ...rest] = s.split(":"),
+    id = rest.join(":").trim();
+  if (kind === "postcode" && /^\d{3}$/.test(id)) return { kind, id };
+  if (kind === "municipality" && id in MUNICIPALITIES) return { kind, id };
+  if (kind === "district" && id && id.length <= 80) return { kind, id };
+  return null;
+}
+export const areaKey = (a: AreaRef) => `${a.kind}:${a.id}`;
+// Shared filters with the geography replaced by one area.
+export function scopeTo(f: FilterState, a: AreaRef): FilterState {
+  return {
+    ...f,
+    municipality: a.kind === "municipality" ? a.id : "",
+    postcode: a.kind === "postcode" ? a.id : "",
+    district: a.kind === "district" ? a.id : "",
+  };
+}

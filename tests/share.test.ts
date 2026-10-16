@@ -3,19 +3,30 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { decodeCSV, normalizeSale } from "../lib/data";
 import { parseFilters } from "../lib/analytics";
+import { compare } from "../lib/compare";
 import { notModified, sparkPath } from "../lib/card";
 import { sqm, year } from "../lib/format";
 import {
   apiParams,
   filterSummary,
+  parseArea,
   parseView,
   serializeView,
   DEFAULT_FILTERS,
 } from "../lib/share";
+import type { Sale } from "../lib/types";
 const sale = normalizeSale(
   decodeCSV(readFileSync("tests/fixtures/kaupskra.csv")).records[0],
   "2026-09-19",
 );
+const today = "2026-09-19";
+const many = (n: number, patch: Partial<Sale>) =>
+  Array.from({ length: n }, (_, i) => ({
+    ...sale,
+    id: `${patch.postcode ?? sale.postcode}-${i}-${patch.price ?? sale.price}`,
+    propertyId: `${i}`,
+    ...patch,
+  }));
 
 test("shared view round-trips through the URL and omits defaults", () => {
   const p = new URLSearchParams(
@@ -65,6 +76,40 @@ test("card summaries name every active restriction", () => {
     ),
     ["Sérbýli", "5+ herbergi", "≥ 1.000 m²", "leit: „Laugavegur“"],
   );
+});
+test("area parameters are validated", () => {
+  assert.deepEqual(parseArea("postcode:107"), { kind: "postcode", id: "107" });
+  assert.deepEqual(parseArea("district:4. Laugardalur"), {
+    kind: "district",
+    id: "4. Laugardalur",
+  });
+  assert.equal(parseArea("postcode:1a7"), null);
+  assert.equal(parseArea("municipality:9999"), null);
+});
+test("comparison is suppressed when either side has fewer than five sales", () => {
+  const rows = [
+    ...many(20, { postcode: "101", ppm: 900000 }),
+    ...many(4, { postcode: "108", ppm: 800000 }),
+  ];
+  const a = { kind: "postcode", id: "101" } as const,
+    b = { kind: "postcode", id: "108" } as const;
+  const thin = compare(rows, DEFAULT_FILTERS, a, b, today);
+  assert.equal(thin.comparable, false);
+  assert.equal(thin.difference, null);
+  assert.equal(thin.distribution, null);
+  assert.equal(thin.b.summary.ppm, null);
+  const full = compare(
+    [...rows, ...many(6, { postcode: "108", ppm: 800000 })],
+    DEFAULT_FILTERS,
+    a,
+    b,
+    today,
+  );
+  assert.equal(full.comparable, true);
+  assert.equal(full.difference, 12.5);
+  const bins = full.distribution!;
+  assert.equal(Math.round(bins.reduce((n, x) => n + x.a, 0)), 100);
+  assert.equal(Math.round(bins.reduce((n, x) => n + x.b, 0)), 100);
 });
 test("sparklines skip suppressed months instead of drawing through them", () => {
   assert.equal(sparkPath([null, 1], 100, 10), "");
