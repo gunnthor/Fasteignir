@@ -4,6 +4,18 @@ const config: NextConfig = {
     "/api/*": [
       "./data/processed/sales.json.gz",
       "./data/processed/properties.json.gz",
+      "./data/processed/history.jsonl.gz",
+      "./data/processed/observed.json.gz",
+      "./data/processed/report.json",
+    ],
+    "/eign/*": [
+      "./data/processed/history.jsonl.gz",
+      "./data/processed/sales.json.gz",
+      "./data/processed/report.json",
+    ],
+    "/nyskrad": [
+      "./data/processed/sales.json.gz",
+      "./data/processed/observed.json.gz",
       "./data/processed/report.json",
     ],
     // Pages read the snapshot for share metadata and area lists; /embed renders cards.

@@ -32,3 +32,15 @@ If row volume/traffic makes per-process decompression or in-memory filtering exp
 Transparent comparable-sales baseline, same postcode and type, recent 24-month window, size/rooms/build-year/recency weighting, weighted price/m² quantiles and effective sample size. The interval is empirical comparable spread, not a calibrated prediction interval. No production hedonic model until time-based evaluation beats the baseline.
 
 Property lookup uses a server-only compressed index of the latest recorded residential attributes per seven-digit FASTNUM. `/api/properties?q=` returns at most 25 records; `?id=` returns one. FEPILOG is preserved verbatim to distinguish units. Historical details remain editable; the selected FASTNUM is excluded from comparable selection. No owner or occupant data is exposed.
+
+## Market intelligence and property history (October 2026)
+
+Additional ingestion outputs, all server-only:
+
+- `data/processed/history.jsonl.gz`: one `FASTNUM<TAB>packed JSON` line per Capital Region residential property (about 3.3 MB gzip). The server keeps the lines as strings (about 7 MB heap measured, against 66 MB for parsed tuples) and parses one property per request (about 0.4 ms).
+- `data/processed/observed.json.gz`: rows first observed or changed in the last 60 days, plus the run log (about 16 KB).
+- `data/state/` (`observations.tsv`, `runs.json`): durable observation state, about 8 MB of sorted text lines.
+
+Durable state lives on the orphan branch `ingest-state` of this repository and is managed by `scripts/observation-state.sh`. The verify job fetches it before ingestion: a missing branch bootstraps a baseline, any other fetch error fails the job, and a corrupt file fails parsing. Only after unit tests, ingestion, build and browser tests pass does the job upload the state as an artifact. The separate `persist-state` job, the only one with `contents: write`, commits it as a fast-forward of the exact commit that was fetched. If the branch moved, nothing is overwritten and the job fails; a retry with unchanged state pushes nothing. The deploy job reads the persisted state and never writes it. Sorted line-oriented text keeps daily commits small through git delta compression and leaves an auditable history. Accepted edge case: a row that first appears between the verify and deploy jobs is dated by the next verify run. Rejected alternatives: the Actions cache (evictable), artifacts alone (expire and need API lookups), a database or blob store (a new service and credentials).
+
+Runtime costs: the estimator indexes eligible sales by postcode and type once per snapshot (1.3 ms per estimate; the eight-scenario sensitivity grid about 11 ms). Distribution responses are about 1.5 KB, history responses about 3 KB, and `/nyskrad` about 20 KB of gzip HTML. Incomplete-month flags are cached per snapshot. Distributions, history pages and registration analytics are computed on the server; client JavaScript is limited to the distribution panel, the valuation evidence, the history lookup box and the registration charts.

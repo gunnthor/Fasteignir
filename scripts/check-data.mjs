@@ -5,6 +5,8 @@ const required = [
   "data/processed/report.json",
   "public/data/areas.geojson",
   "data/processed/properties.json.gz",
+  "data/processed/history.jsonl.gz",
+  "data/processed/observed.json.gz",
 ];
 try {
   await Promise.all(required.map((file) => access(file, constants.R_OK)));
@@ -13,6 +15,8 @@ try {
   if (
     !report.analyticalSales ||
     !report.propertyCount ||
+    !report.historySales ||
+    !report.observation?.trackingSince ||
     !report.sources?.postnumer?.sha256 ||
     !report.sources?.kaupskra?.sha256 ||
     !report.sources?.kaupskra?.downloadedAt ||

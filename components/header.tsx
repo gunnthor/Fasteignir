@@ -64,10 +64,16 @@ export function Header() {
           ["/samanburdur", strings.compare],
           ["/kaupgeta", strings.budget],
           ["/verdmat", strings.estimate],
+          ["/eign", strings.history],
+          ["/nyskrad", strings.registered],
           ["/um-gognin", strings.about],
         ].map(([href, label]) => (
           <Link
-            aria-current={path === href ? "page" : undefined}
+            aria-current={
+              path === href || (href === "/eign" && path.startsWith("/eign/"))
+                ? "page"
+                : undefined
+            }
             key={href}
             href={href}
           >

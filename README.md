@@ -40,6 +40,10 @@ Optionally set `CHROMIUM_PATH` to an existing Chrome executable. Tests serve a n
 - Shareable views: map and market filters live in the URL (`/markadur?postcode=107&type=apartment&months=24`). The **Deila** panel copies a link, an `<iframe>` code for `/embed` and a PNG card from `/api/card`, optionally pinning a relative period to exact dates. Shared links get per-view Open Graph images. Cards apply the same suppression as the app (no prices under 5 sales, warning under 10) and always state the date range, nominal-price caveat, data download date and latest contract date.
 - `/samanburdur`: two postcodes, districts or municipalities side by side under shared filters, with median price/m², counts, median size and interquartile range, type mix, build year, a shared-bin price/m² distribution and rolling trends. The difference and distribution are withheld unless both sides have at least 5 eligible sales.
 - `/kaupgeta`: budget-first view of where comparable homes have actually sold at or below a total price, by municipality with postcode drill-down: counts, shares, within-budget size distribution and a share-by-budget curve. Shares need at least 5 comparable sales and within-budget statistics at least 5 sales within budget. It is labelled as historical evidence, never current listings.
+- Price distributions on `/markadur`: histogram of total price or price/m² under the same filters, 25th/50th/75th percentiles and where a chosen price falls, with small-group protection (median from 5 sales, detail from 20, no bar holding 1–4 sales) and warnings for mixed groups. Sale cards link to the distribution of their comparison group.
+- `/eign` and `/eign/<fastnúmer>`: a property's sales history — every recorded contract with signature and registration dates, price, price/m², characteristics, nominal changes between comparable contracts, and a confirmed, uncertain or single-sale status. No owner data.
+- `/verdmat` evidence: comparable weights broken into size, rooms, build year and recency; weight from older or less similar sales; a leave-one-out range; extrapolation warnings; rolling-origin backtest results; and a what-if panel (size, rooms, build year, 12/24/36-month lookback) with before/after and reset.
+- `/nyskrad`: sales first observed in the daily HMS file, with signature, registration and first-observed dates kept apart, plus the registration-delay distribution, trend, group comparisons and incomplete-month flags (also noted on the market charts).
 - `/um-gognin`: Icelandic sources, filtering, privacy and limitations.
 - Responsive layout, dark mode, error/loading/empty states and keyboard-accessible geography lists.
 
@@ -55,7 +59,7 @@ Raw/audit files stay local and out of frontend bundles. Server routes load a ~7 
 
 ## Deploy and automatic refresh
 
-The project builds on Vercel. Build only after ingestion; a prebuild guard rejects missing/incomplete snapshots; `next.config.ts` traces `sales.json.gz`, `properties.json.gz` and the report into API functions, and the sales snapshot and report into `/`, `/markadur`, `/samanburdur` and `/embed` (share metadata, area lists and cards). MapLibre v6 workers are copied from the installed package by `predev`/`prebuild`, including their shared module. Dependencies are pinned by package manifest and lockfile.
+The project builds on Vercel. Build only after ingestion; a prebuild guard rejects missing/incomplete snapshots; `next.config.ts` traces `sales.json.gz`, `properties.json.gz`, `history.jsonl.gz`, `observed.json.gz` and the report into API functions (and the needed files into `/eign/*` and `/nyskrad`), and the sales snapshot and report into `/`, `/markadur`, `/samanburdur` and `/embed` (share metadata, area lists and cards). MapLibre v6 workers are copied from the installed package by `predev`/`prebuild`, including their shared module. Dependencies are pinned by package manifest and lockfile.
 
 `.github/workflows/refresh.yml` runs daily at 06:20 UTC and manually. It tests, fetches current official data, builds, runs browser tests, and verifies source data without publishing bulk datasets or generated reports. It deploys only when repository variable `ENABLE_PRODUCTION_DEPLOYMENT=true` and Vercel credentials are configured. Required secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. The `production` GitHub environment can carry deployment protection rules. Existing production remains intact if ingestion, build or tests fail.
 
@@ -68,13 +72,19 @@ The public repository is [gunnthor/Fasteignir](https://github.com/gunnthor/Faste
 
 `NEXT_PUBLIC_MAP_STYLE_URL` optionally supplies another MapLibre style URL. The default uses on-screen OpenStreetMap raster tiles with visible attribution. Its community tile servers have no traffic/SLA guarantee; review their usage policy. The application does not scrape, prefetch towns, or download offline maps. Fonts are self-hosted.
 
+## Observation state
+
+`npm run ingest` reads and advances `data/state/observations.tsv` (set another folder with `FASTEIGN_STATE_DIR`). Without a state it starts a baseline in which no existing row counts as new. To start from an older raw download instead, run `npm run ingest -- --bootstrap-from path/to/kaupskra.csv --bootstrap-date YYYY-MM-DD` with an empty state folder. `--allow-mass-removal` accepts a source in which many known rows disappeared. In CI the state is kept on the `ingest-state` branch (see ARCHITECTURE.md); `bash tests/observation-state.sh` tests that persistence against a throwaway remote.
+
 ## Model experiment
 
 ```sh
 npm run evaluate
 ```
 
-This runs a time-separated ridge hedonic regression against the comparable-sales baseline and saves `data/evaluation/hedonic.json`. The first holdout uses 32,024 training records and 5,340 test records. On 5,281 paired predictions, the baseline beat the ridge model (MAE ~7.96m vs ~11.97m ISK; median APE ~6.28% vs ~12.38%). The hedonic model is **not deployed**. One retrospective split is not a production accuracy guarantee; see the saved limitations.
+`npm run backtest` evaluates the production comparable-sales estimator over eight rolling quarters at 12, 24 and 36-month lookbacks and saves `data/evaluation/comparables.json`, which `/verdmat` shows.
+
+`npm run evaluate` runs a time-separated ridge hedonic regression against the comparable-sales baseline and saves `data/evaluation/hedonic.json`. The first holdout uses 32,024 training records and 5,340 test records. On 5,281 paired predictions, the baseline beat the ridge model (MAE ~7.96m vs ~11.97m ISK; median APE ~6.28% vs ~12.38%). The hedonic model is **not deployed**. One retrospective split is not a production accuracy guarantee; see the saved limitations.
 
 ## Remaining product work
 

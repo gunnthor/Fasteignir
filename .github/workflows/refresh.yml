@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "20 6 * * *"
   workflow_dispatch:
+    inputs:
+      allow_mass_removal:
+        description: "Accept a source where many known rows disappeared (check HMS first)"
+        type: boolean
+        default: false
   push:
     branches: [main]
   pull_request:
@@ -14,7 +19,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,7 +28,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run ingest
+      - name: Test observation-state persistence
+        run: bash tests/observation-state.sh
+      # When the branch exists the state is required: a missing or corrupt
+      # file stops the run instead of silently starting a new baseline.
+      - name: Fetch observation state
+        run: |
+          bash scripts/observation-state.sh fetch data/state
+          if [ -s data/state/.base ]; then echo "FASTEIGN_REQUIRE_STATE=1" >> "$GITHUB_ENV"; fi
+      - run: npm run ingest -- ${{ inputs.allow_mass_removal && '--allow-mass-removal' || '' }}
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Verify production build in browser
@@ -34,8 +47,33 @@ jobs:
             sleep 1
           done
           npm run test:e2e
-  deploy:
+      # Only a fully verified run may advance the durable state.
+      - name: Keep observation state for persistence
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-state
+          path: data/state/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+  persist-state:
     needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: observation-state
+          path: data/state
+      # Fast-forward only; fails without overwriting if the branch moved.
+      - run: bash scripts/observation-state.sh push data/state
+  deploy:
+    needs: [verify, persist-state]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.ENABLE_PRODUCTION_DEPLOYMENT == 'true'
     runs-on: ubuntu-latest
     environment: production
@@ -44,6 +82,7 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      FASTEIGN_REQUIRE_STATE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,7 +90,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run ingest
+      # Reads the state just persisted; this job never writes it back.
+      - run: bash scripts/observation-state.sh fetch data/state
+      - run: npm run ingest -- ${{ inputs.allow_mass_removal && '--allow-mass-removal' || '' }}
       - run: npx --yes vercel@54.18.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
       - run: npx --yes vercel@54.18.0 build --prod --token="$VERCEL_TOKEN"
       - run: npx --yes vercel@54.18.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN"

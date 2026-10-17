@@ -1,7 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Search,
   SlidersHorizontal,
@@ -42,9 +42,11 @@ import {
   areaLabel,
   serializeFilters,
   serializeView,
+  distributionLink,
   type View,
 } from "@/lib/share";
 import { SharePanel } from "./share";
+import { PriceDistribution } from "./price-distribution";
 import { syncUrl } from "./filter-bar";
 const SalesMap = dynamic(() => import("./map"), {
   ssr: false,
@@ -93,13 +95,17 @@ export function SaleCard({ sale }: { sale: Sale }) {
             : "Áreiðanleg staðsetning á korti ekki tiltæk."}
         </p>
         <small>Heimild: HMS Kaupskrá fasteigna · Færsla {sale.id}</small>
-        {/^[0-9]{7}$/.test(sale.propertyId) && (
-          <p>
-            <Link href={`/verdmat?property=${sale.propertyId}`}>
-              Verðmeta þessa eign →
-            </Link>
-          </p>
-        )}
+        <p className="sale-links">
+          <Link href={distributionLink(sale)}>Hvar liggur verðið? →</Link>
+          {/^[0-9]{7}$/.test(sale.propertyId) && (
+            <>
+              <Link href={`/eign/${sale.propertyId}`}>Sölusaga eignar →</Link>
+              <Link href={`/verdmat?property=${sale.propertyId}`}>
+                Verðmeta þessa eign →
+              </Link>
+            </>
+          )}
+        </p>
       </div>
     </details>
   );
@@ -124,8 +130,22 @@ export function Explorer({
     [mapLevel, setMapLevel] = useState(initialView.level),
     [tab, setTab] = useState<"district" | "postcode" | "municipality">(
       initialView.level,
-    );
-  const view: View = { filters, q: query, metric, level: mapLevel, points };
+    ),
+    [dist, setDist] = useState(initialView.dist),
+    [value, setValue] = useState(initialView.value);
+  const view: View = {
+    filters,
+    q: query,
+    metric,
+    level: mapLevel,
+    points,
+    dist,
+    value,
+  };
+  const changeDistribution = useCallback((m: View["dist"], v: string) => {
+    setDist(m);
+    setValue(v);
+  }, []);
   const search = serializeView(view).toString();
   // Mirror the view into the address bar so any state can be shared or bookmarked.
   useEffect(() => syncUrl(search), [search]);
@@ -422,6 +442,14 @@ export function Explorer({
       </Link>
     </>
   );
+
+  const incompleteNote = data?.incomplete.length ? (
+    <p className="micro incomplete-note">
+      Síðustu mánuðir ({data.incomplete.map((m) => m.month).join(", ")}) eru
+      líklega ófullgerðir: samningum er þinglýst nokkru eftir undirritun og þeir
+      bætast enn við. <Link href="/nyskrad">Um þinglýsingartíma →</Link>
+    </p>
+  ) : null;
   const summary = data && (
     <>
       <div className="summary-heading">
@@ -575,6 +603,7 @@ export function Explorer({
               <p className="micro">
                 3 mánaða hlaupandi miðgildi. Færri en 5 sölur eru ekki sýndar.
               </p>
+              {incompleteNote}
               <div className="section-title">
                 <h3>
                   {filters.district || filters.postcode || query
@@ -651,6 +680,12 @@ export function Explorer({
                       <ArrowUpRight size={14} /> Bera saman við annað svæði
                     </Link>
                   )}
+                  <Link
+                    className="text-button"
+                    href={`/markadur?${serializeView({ ...view, metric: "ppm", points: false })}#dreifing`}
+                  >
+                    <ArrowUpRight size={14} /> Dreifing verðs á svæðinu
+                  </Link>
                 </>
               ) : (
                 <>
@@ -733,6 +768,14 @@ export function Explorer({
           {data && (
             <>
               <div className="market-summary panel">{summary}</div>
+              <span id="dreifing" />
+              <PriceDistribution
+                filters={filters}
+                q={query}
+                metric={dist}
+                value={value}
+                onChange={changeDistribution}
+              />
               <div className="market-charts">
                 {[
                   ["ppm", "Söluverð á fermetra"],
@@ -750,6 +793,7 @@ export function Explorer({
                       data={data.trend}
                       kind={kind as "ppm" | "volume" | "area"}
                     />
+                    {kind === "volume" && incompleteNote}
                   </article>
                 ))}
               </div>
@@ -792,7 +836,7 @@ export function Explorer({
                 <h3>Mánaðarleg gögn og úrtaksstærð</h3>
                 <p className="caption">
                   Verð og stærð byggja á þriggja mánaða glugga sem lýkur í
-                  viðkomandi mánuði.
+                  viðkomandi mánuði. † líklega ófullgerður mánuður.
                 </p>
                 <div className="table-wrap">
                   <table>
@@ -810,7 +854,12 @@ export function Explorer({
                         .reverse()
                         .map((t) => (
                           <tr key={t.month}>
-                            <td>{t.month}</td>
+                            <td>
+                              {t.month}
+                              {data.incomplete.some(
+                                (m) => m.month === t.month,
+                              ) && " †"}
+                            </td>
                             <td>{ppm(t.ppm)}</td>
                             <td>{sqm(t.area)}</td>
                             <td>{num(t.count)}</td>

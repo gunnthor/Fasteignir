@@ -34,6 +34,10 @@ export type View = {
   metric: (typeof METRICS)[number];
   level: "postcode" | "district";
   points: boolean;
+  // Price distribution panel: total price or price per m², and an optional
+  // ISK value to place within the distribution.
+  dist: "price" | "ppm";
+  value: string;
 };
 export const DEFAULT_VIEW: View = {
   filters: DEFAULT_FILTERS,
@@ -41,7 +45,17 @@ export const DEFAULT_VIEW: View = {
   metric: "ppm",
   level: "postcode",
   points: false,
+  dist: "price",
+  value: "",
 };
+// Whole ISK: total price 1 m.kr.–5.000 m.kr., price/m² 10 þ.kr.–10 m.kr.
+// Returns undefined for anything else.
+export function parseDistributionValue(s: string, metric: "price" | "ppm") {
+  if (!/^\d{1,10}$/.test(s)) return undefined;
+  const n = +s,
+    [lo, hi] = metric === "price" ? [1e6, 5e9] : [1e4, 1e7];
+  return n >= lo && n <= hi ? n : undefined;
+}
 export type ParamSource =
   URLSearchParams | Record<string, string | string[] | undefined>;
 
@@ -98,13 +112,19 @@ export function parseFilterState(source: ParamSource): FilterState {
   };
 }
 export function parseView(source: ParamSource): View {
-  const metric = param(source, "metric") as View["metric"];
+  const metric = param(source, "metric") as View["metric"],
+    dist = param(source, "dist") === "ppm" ? "ppm" : "price";
   return {
     filters: parseFilterState(source),
     q: param(source, "q").slice(0, 100),
     metric: METRICS.includes(metric) ? metric : "ppm",
     level: param(source, "level") === "district" ? "district" : "postcode",
     points: param(source, "points") === "1",
+    dist,
+    value:
+      parseDistributionValue(param(source, "value"), dist) === undefined
+        ? ""
+        : param(source, "value"),
   };
 }
 
@@ -141,6 +161,8 @@ export function serializeView(v: View, pin?: { from: string; to: string }) {
   if (v.metric !== "ppm") p.set("metric", v.metric);
   if (v.level !== "postcode") p.set("level", v.level);
   if (v.points) p.set("points", "1");
+  if (v.dist !== "price") p.set("dist", v.dist);
+  if (v.value) p.set("value", v.value);
   return p;
 }
 // Parameters understood by lib/analytics parseFilters.
@@ -234,4 +256,36 @@ export function question(f: FilterState, budget: number) {
               ? "síðustu 5 ár"
               : `síðustu ${f.months} mánuði`;
   return `Hvar hafa selst ${rooms}${kind} á ${numberIS(budget / 1e6)} m.kr. eða minna ${when}?`;
+}
+
+const shiftMonth = (d: string, months: number) => {
+  const t = new Date(d + "T00:00:00Z");
+  t.setUTCMonth(t.getUTCMonth() + months, Math.min(t.getUTCDate(), 28));
+  return t.toISOString().slice(0, 10);
+};
+// The comparison group for placing one sale in the price distribution: same
+// postcode and type, floor area within ±25 % and contracts within six months
+// either side of the sale (the sale itself included). Opens /markadur.
+export function distributionLink(s: {
+  date: string;
+  postcode: string;
+  type: string;
+  area: number;
+  price: number;
+}) {
+  const now = today(),
+    to = shiftMonth(s.date, 6);
+  const filters: FilterState = {
+    ...DEFAULT_FILTERS,
+    months: "custom",
+    from: shiftMonth(s.date, -6),
+    to: to > now ? now : to,
+    type: ["apartment", "house"].includes(s.type) ? s.type : "all",
+    postcode: /^\d{3}$/.test(s.postcode) ? s.postcode : "",
+    minArea: String(Math.floor(s.area * 0.75)),
+    maxArea: String(Math.ceil(s.area * 1.25)),
+  };
+  const p = serializeFilters(filters);
+  p.set("value", String(Math.round(s.price)));
+  return `/markadur?${p}#dreifing`;
 }

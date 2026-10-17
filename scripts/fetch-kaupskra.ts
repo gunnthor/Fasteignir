@@ -10,6 +10,15 @@ import {
   quantile,
 } from "../lib/data";
 import { buildPropertyIndex } from "../lib/properties";
+import { buildHistoryIndex, packHistory } from "../lib/history";
+import {
+  observe,
+  parseState,
+  serializeState,
+  recentObservations,
+  rowKey,
+  type RunSummary,
+} from "../lib/observations";
 import type { Sale } from "../lib/types";
 const sources = {
   postnumer:
@@ -103,6 +112,20 @@ async function main() {
     const key = r.emnr + "|" + r.skjalanumer;
     documents.set(key, (documents.get(key) ?? 0) + 1);
   }
+  // Same FASTNUM, contract date and price under a second document number: most
+  // likely one sale registered twice. Keep the earliest FAERSLUNUMER only.
+  const twins = new Set<number>(),
+    firstOf = new Map<string, string>();
+  [...rows.keys()]
+    .sort((a, b) => +rows[a].id - +rows[b].id)
+    .forEach((i) => {
+      const s = rows[i];
+      if (!s.date || s.price <= 0) return;
+      const key = `${s.propertyId}|${s.date}|${s.price}`,
+        first = firstOf.get(key);
+      if (first === undefined) firstOf.set(key, s.id);
+      else if (first !== s.id) twins.add(i);
+    });
   const locationCache = new Map<
     string,
     Pick<Sale, "coordinates" | "coordinateQuality" | "district">
@@ -113,6 +136,7 @@ async function main() {
     if ((ids.get(s.id) ?? 0) > 1) s.reasons.push("duplicate_id");
     if ((documents.get(raw.emnr + "|" + raw.skjalanumer) ?? 0) > 1)
       s.reasons.push("multiple_rows_per_document");
+    if (twins.has(i)) s.reasons.push("probable_duplicate_registration");
     s.usable = !s.reasons.length;
     if (!s.capital) continue;
     const key = s.heinum + "|" + s.municipality;
@@ -201,8 +225,39 @@ async function main() {
   }
   const valid = rows.filter((s) => s.capital && s.usable);
   const properties = buildPropertyIndex(rows, csv.records);
+  const history = buildHistoryIndex(rows, csv.records);
+  const observation = await advanceObservations(csv.records, today);
+  const byKey = new Map(csv.records.map((r, i) => [rowKey(r), rows[i]]));
+  const recent = recentObservations(observation.state, today);
+  const observed = {
+    trackingSince: observation.state.trackingSince,
+    generatedAt: new Date().toISOString(),
+    lastRun: observation.summary,
+    runs: observation.runs.slice(-60),
+    since: recent.since,
+    removed: recent.removed,
+    recent: recent.rows.map((o) => {
+      const s = byKey.get(`${o.id}|${o.propertyId}`);
+      return {
+        ...o,
+        date: s?.date ?? "",
+        registered: s?.registered ?? null,
+        capital: Boolean(s?.capital),
+        residential: Boolean(s?.residential),
+        usable: Boolean(s?.usable),
+        type: s?.type ?? "other",
+        municipality: s?.municipality ?? "",
+      };
+    }),
+  };
   const report = {
     propertyCount: properties.length,
+    historyProperties: history.length,
+    historySales: history.reduce((n, h) => n + h.sales.length, 0),
+    observation: {
+      trackingSince: observed.trackingSince,
+      lastRun: observation.summary,
+    },
     generatedAt: new Date().toISOString(),
     sources: manifest,
     encoding: csv.encoding,
@@ -261,6 +316,16 @@ async function main() {
   };
   for (const [path, bytes] of [
     ["data/processed/properties.json.gz", gzipSync(JSON.stringify(properties))],
+    // One "FASTNUM<TAB>packed JSON" line per property; parsed per lookup.
+    [
+      "data/processed/history.jsonl.gz",
+      gzipSync(
+        history
+          .map((h) => `${h.propertyId}\t${JSON.stringify(packHistory(h))}`)
+          .join("\n"),
+      ),
+    ],
+    ["data/processed/observed.json.gz", gzipSync(JSON.stringify(observed))],
     ["data/processed/sales.json.gz", gzipSync(JSON.stringify(valid))],
     ["data/processed/audit.json.gz", gzipSync(JSON.stringify(rows))],
     ["data/processed/report.json", JSON.stringify(report, null, 2)],
@@ -268,6 +333,9 @@ async function main() {
     await writeFile(path + ".tmp", bytes);
     await rename(path + ".tmp", path);
   }
+  // The tracking state is written last: if anything above failed, the previous
+  // state stays in place and the next run observes the same rows again.
+  await observation.commit();
   // Reduce precision to ~1 m; preserve official geometry topology and every vertex.
   const publicGeo = {
     ...geo,
@@ -331,6 +399,63 @@ async function main() {
       2,
     ),
   );
+}
+// Loads the durable observation state (see .github/workflows/refresh.yml),
+// advances it with this download and returns a commit() that persists it.
+async function advanceObservations(
+  records: Record<string, string>[],
+  today: string,
+) {
+  const dir = process.env.FASTEIGN_STATE_DIR ?? "data/state",
+    file = `${dir}/observations.tsv`,
+    runsFile = `${dir}/runs.json`,
+    arg = (name: string) => {
+      const i = process.argv.indexOf(name);
+      return i > 0 ? process.argv[i + 1] : undefined;
+    };
+  let text: string | null = null;
+  try {
+    text = await readFile(file, "utf8");
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+  }
+  if (text === null && process.env.FASTEIGN_REQUIRE_STATE === "1")
+    throw Error(`Observation state required but ${file} is missing`);
+  let previous = text === null ? null : parseState(text);
+  const runs: RunSummary[] =
+    text === null
+      ? []
+      : JSON.parse(await readFile(runsFile, "utf8").catch(() => "[]"));
+  const baseline = arg("--bootstrap-from"),
+    baselineDate = arg("--bootstrap-date");
+  if (baseline) {
+    if (previous)
+      throw Error("--bootstrap-from needs an empty state directory");
+    if (!baselineDate || !/^\d{4}-\d{2}-\d{2}$/.test(baselineDate))
+      throw Error("--bootstrap-from requires --bootstrap-date YYYY-MM-DD");
+    const old = decodeCSV(await readFile(baseline)).records,
+      boot = observe(null, old, baselineDate);
+    previous = boot.state;
+    runs.push(boot.summary);
+  }
+  const result = observe(previous, records, today, {
+    allowMassRemoval: process.argv.includes("--allow-mass-removal"),
+  });
+  runs.push(result.summary);
+  return {
+    ...result,
+    runs,
+    async commit() {
+      await mkdir(dir, { recursive: true });
+      for (const [path, body] of [
+        [file, serializeState(result.state)],
+        [runsFile, JSON.stringify(runs.slice(-400), null, 1)],
+      ]) {
+        await writeFile(path + ".tmp", body);
+        await rename(path + ".tmp", path);
+      }
+    },
+  };
 }
 main().catch((e) => {
   console.error(e);

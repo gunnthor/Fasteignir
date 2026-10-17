@@ -47,6 +47,8 @@ export const strings = {
   estimate: "Verðmat",
   compare: "Samanburður",
   budget: "Kaupgeta",
+  history: "Sölusaga",
+  registered: "Nýskráð",
   about: "Um gögnin",
   search: "Leita að heimilisfangi, póstnúmeri eða svæði",
   source: "Byggir á upplýsingum frá HMS — Kaupskrá fasteigna",

@@ -76,6 +76,8 @@ export type Exploration = {
   downloadedAt: string;
   latestSale: string;
   latestRegistration: string;
+  // Recent contract months probably not yet fully registered (lib/registration).
+  incomplete: { month: string; ended: boolean; share: number }[];
   version: string;
   matchedCount: number;
   total: number;

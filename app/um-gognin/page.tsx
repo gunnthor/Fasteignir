@@ -54,6 +54,10 @@ export default function About() {
           óljóst verð á eign.
         </li>
         <li>
+          Sé sama sala (sama eign, dagsetning og verð) skráð tvisvar undir
+          ólíkum skjalanúmerum er aðeins fyrsta skráningin talin.
+        </li>
+        <li>
           Öfgagildi fermetraverðs eru greind innan sveitarfélags, árs og
           tegundar með ytri fjórðungamörkum á log-kvarða. Úrtök undir 30 sölum
           eru ekki skorin með þeirri reglu.
@@ -120,10 +124,11 @@ export default function About() {
       </p>
       <h2>Hvað segir verðmatið?</h2>
       <p>
-        Tilraunalíkanið velur allt að 50 sambærilegar sölur síðustu 24 mánaða í
-        sama póstnúmeri og af sömu tegund. Stærð þarf að vera á bilinu 65–150%
-        af stærð eignarinnar. Lík stærð, herbergi, byggingarár og nýleg sala
-        auka vægi. Aðeins nýjasta gjaldgenga sala hverrar eignar er notuð.
+        Tilraunalíkanið velur allt að 50 sambærilegar sölur síðustu 24 mánaða
+        (sjálfgefið) í sama póstnúmeri og af sömu tegund. Stærð þarf að vera á
+        bilinu 65–150% af stærð eignarinnar. Lík stærð, herbergi, byggingarár og
+        nýleg sala auka vægi. Aðeins nýjasta gjaldgenga sala hverrar eignar er
+        notuð.
       </p>
       <p>
         Miðpunkturinn er vegið miðgildi fermetraverðs margfaldað með stærð.
@@ -135,6 +140,68 @@ export default function About() {
       <p>
         Líkanið metur ekki ástand, útsýni, hæð, bílskúr eða endurbætur. Það er
         ekki formlegt verðmat eða lánshæfismat.
+      </p>
+      <p>
+        Við matið sést hvaða sölur réðu niðurstöðunni og hvers vegna: vægi
+        hverrar sölu er margfeldi fjögurra þátta (stærð, herbergi, byggingarár,
+        tími frá sölu). Sýnt er hve stór hluti vægis kemur frá sölum eldri en 12
+        mánaða og frá ólíkari eignum, og hvernig miðpunktur breytist ef einni af
+        tíu vægismestu sölunum er sleppt. Sviðsmyndir endurreikna sömu aðferð
+        með breyttri stærð, herbergjafjölda, byggingarári eða 12, 24 eða 36
+        mánaða tímabili. Þær sýna hve mikið niðurstaðan veltur á forsendum, ekki
+        aukna nákvæmni, og ef of fáar sölur finnast er ekkert mat birt.
+      </p>
+      <p>
+        Aðferðin hefur verið prófuð afturvirkt á átta ársfjórðungum: fyrir
+        hverja sölu var aðeins notast við samninga sem þá höfðu verið
+        þinglýstir. Niðurstöður prófunarinnar eru sýndar með matinu. Þær eru
+        meðaltal yfir margar eignir og gera bilið ekki að kvörðuðu öryggisbili
+        fyrir einstaka eign.
+      </p>
+      <h2>Dreifing verðs og hundraðshlutar</h2>
+      <p>
+        Á Markaðnum má sjá hvernig kaupverð eða fermetraverð dreifist innan
+        valinna sía og hvar tiltekið verð lendir. Hundraðshlutar eru reiknaðir
+        með línulegri brúun milli raðaðra gilda (sama aðferð og sjálfgefin er í
+        R og NumPy). Staða verðs er hlutfall sala á lægra verði að viðbættum
+        helmingi sala á sama verði. Miðgildi birtist frá fimm sölum, en
+        hundraðshlutar, súlurit og staða verðs aðeins frá 20 sölum. Súlur eru
+        jafnbreiðar með opnum endum og engin súla sýnir færri en fimm sölur.
+        Viðvörun birtist þegar hópurinn blandar saman fjölbýli og sérbýli,
+        stærðir eru mjög ólíkar, tímabilið er lengra en þrjú ár eða hópurinn nær
+        yfir mörg hverfi. Ásett verð er aldrei notað.
+      </p>
+      <h2>Sölusaga eignar</h2>
+      <p>
+        Sölusaga sýnir alla skráða kaupsamninga íbúðar á höfuðborgarsvæðinu frá
+        2006, tengda saman með fastanúmeri. Fastanúmer getur haldist þótt eign
+        sé stækkuð, sameinuð eða endurskráð, svo einnig er borið saman
+        einingarnúmer, skráð stærð og tegund. Sagan er merkt samfelld þegar
+        þetta helst óbreytt, annars óviss. Verðbreyting er aðeins reiknuð milli
+        samninga um eina eign sem HMS telur nothæfa; samningar um fleiri eignir
+        eða óvenjuleg kjör eru sýndir en ekki bornir saman. Sami samningur
+        skráður tvisvar er talinn einu sinni og er undanskilinn verðtölum.
+      </p>
+      <p>
+        Fyrra söluverð er ekki fyrra verðmæti sömu eignar: endurbætur, ástand og
+        kjör geta skýrt muninn. Breytingar eru í nafnverði og eru hvorki ávöxtun
+        né verðvísitala.
+      </p>
+      <h2>Nýskráðar sölur og þinglýsingartími</h2>
+      <p>
+        Fasteign ber kaupskrána saman við fyrri niðurhöl á hverjum degi og
+        skráir hvenær hver færsla sást fyrst. Sá dagur segir ekki hvenær eign
+        seldist: salan miðast við undirritun kaupsamnings og þinglýsing kemur
+        síðar. Færslur sem voru til þegar eftirlit hófst teljast aldrei nýjar,
+        og leiðréttingar HMS á eldri færslum eru taldar sér.
+      </p>
+      <p>
+        Biðtími frá undirritun til þinglýsingar er reiknaður eftir
+        þinglýsingarmánuði. Út frá samningum sem eru eins til tveggja ára er
+        metið hve stór hluti samninga er venjulega þinglýstur eftir tiltekinn
+        tíma, og nýjustu mánuðir eru merktir líklega ófullgerðir. Við áætlum
+        ekki hversu margar óskráðar sölur eru til. Biðtími er ekki sölutími á
+        markaði.
       </p>
       <h2>Persónuvernd og endurnotkun</h2>
       <p>

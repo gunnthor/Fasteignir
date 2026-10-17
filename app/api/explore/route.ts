@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSnapshot } from "@/lib/server";
 import { parseFilters } from "@/lib/analytics";
 import { explore } from "@/lib/explore";
+import { snapshotIncompleteMonths } from "@/lib/registration";
 export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   let f;
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
       downloadedAt: report.sources.kaupskra.downloadedAt,
       latestSale: report.latestSale,
       latestRegistration: report.latestRegistration,
+      incomplete: snapshotIncompleteMonths(rows, report.latestRegistration),
       version,
     };
     return NextResponse.json(body, {

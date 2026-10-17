@@ -12,3 +12,7 @@ public/maplibre/
 
 # Regenerate locally; do not publish property-derived reports.
 data/processed/report.json
+
+# Local inputs for the observation tracker; never published.
+data/history-baseline/
+data/state/

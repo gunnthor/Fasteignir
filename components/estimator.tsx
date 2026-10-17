@@ -2,12 +2,19 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ArrowRight, Info } from "lucide-react";
-import type { estimate } from "@/lib/analytics";
-import { money, num, ppm, numberIS } from "@/lib/format";
+import type { Estimate } from "@/lib/analytics";
+import { money, num, ppm } from "@/lib/format";
 import { PropertyLookup } from "./property-lookup";
 import type { PropertyRecord } from "@/lib/properties";
-import { SaleCard } from "./explorer";
-type Result = ReturnType<typeof estimate>;
+import {
+  Comparables,
+  Evidence,
+  Sensitivity,
+  type Backtest,
+  type Scenario,
+  type Subject,
+} from "./valuation-evidence";
+type Result = Estimate & { scenarios?: Scenario[]; backtest: Backtest };
 export function Estimator() {
   const form = useRef<HTMLFormElement>(null);
   const request = useRef(0);
@@ -42,6 +49,7 @@ export function Estimator() {
     return () => abort.abort();
   }, [selectProperty]);
   const [result, setResult] = useState<Result | null>(null),
+    [subject, setSubject] = useState<Subject | null>(null),
     [loading, setLoading] = useState(false),
     [error, setError] = useState("");
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -53,11 +61,23 @@ export function Estimator() {
     const p = new URLSearchParams(
       new FormData(e.currentTarget) as unknown as Record<string, string>,
     );
+    if (!p.get("propertyId")) p.delete("propertyId");
+    p.set("sensitivity", "1");
     try {
       const r = await fetch(`/api/estimate?${p}`);
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
-      if (generation === request.current) setResult(d);
+      if (generation === request.current) {
+        setSubject({
+          postcode: p.get("postcode")!,
+          type: p.get("type")!,
+          area: Number(p.get("area")),
+          rooms: Number(p.get("rooms")),
+          built: Number(p.get("built")),
+          propertyId: p.get("propertyId") ?? undefined,
+        });
+        setResult(d);
+      }
     } catch (e) {
       if (generation === request.current) setError((e as Error).message);
     } finally {
@@ -107,6 +127,14 @@ export function Estimator() {
                 Upplýsingar úr samningi {property.recordedAt}. Yfirfarðu stærð,
                 herbergi og byggingarár. Fyrri sölur þessarar eignar eru
                 undanskildar matinu.
+              </p>
+              <p>
+                <Link
+                  className="text-link"
+                  href={`/eign/${property.propertyId}`}
+                >
+                  Skoða sölusögu eignarinnar →
+                </Link>
               </p>
               <button
                 type="button"
@@ -223,23 +251,28 @@ export function Estimator() {
                   fasteignamat.
                 </p>
                 <p className="micro">
-                  Virk úrtaksstærð: {num(result.effective)}. Miðgildi aldurs
-                  samninga: {num(result.medianAgeMonths)} mánuðir. Vægi ræðst af
-                  stærð, herbergjum, byggingarári og tíma frá sölu. Engin
-                  leiðrétting fyrir verðbólgu, ástandi eða nýlegum framkvæmdum.
+                  Vægi ræðst af stærð, herbergjum, byggingarári og tíma frá
+                  sölu. Engin leiðrétting fyrir verðbólgu, ástandi eða nýlegum
+                  framkvæmdum.
                 </p>
-                <div className="section-title">
-                  <h3>Sölurnar á bak við matið</h3>
-                  <span>{result.count} eignir</span>
-                </div>
-                {result.comparables.map((c) => (
-                  <div key={c.sale.id}>
-                    <SaleCard sale={c.sale} />
-                    <p className="micro">
-                      Vægi: {numberIS(c.weight * 100, 1)}%
-                    </p>
-                  </div>
-                ))}
+                {subject && (
+                  <>
+                    <Evidence
+                      result={result}
+                      subject={subject}
+                      backtest={result.backtest}
+                    />
+                    {result.scenarios && (
+                      <Sensitivity
+                        key={JSON.stringify(subject)}
+                        result={result}
+                        subject={subject}
+                        scenarios={result.scenarios}
+                      />
+                    )}
+                    <Comparables result={result} subject={subject} />
+                  </>
+                )}
               </section>
             ) : (
               <section className="explanation panel">

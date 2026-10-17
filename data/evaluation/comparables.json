@@ -1,0 +1,160 @@
+{
+  "generatedAt": "2026-10-17T00:53:50.274Z",
+  "method": "Production comparable-sales estimator (lib/analytics estimate), unchanged weights; rolling quarterly origins",
+  "quarters": [
+    "2024-10",
+    "2025-01",
+    "2025-04",
+    "2025-07",
+    "2025-10",
+    "2026-01",
+    "2026-04",
+    "2026-07"
+  ],
+  "knowledgeCutoff": "Comparables registered before the first day of each test quarter",
+  "testSet": "Capital Region apartments and houses signed in the quarter, HMS-suitable, complete, single-property, with rooms and build year; no outcome-based tail screening",
+  "byLookback": {
+    "12": {
+      "tested": 11411,
+      "estimated": 11211,
+      "availability": 0.9824730523179388,
+      "medianAbsolutePercentageError": 6.089588377723982,
+      "within10Percent": 0.7093925608777094,
+      "within20Percent": 0.9281063241459281,
+      "medianSignedPercentageError": -1.704687758114453,
+      "bandCoverage": 0.8031397734368031
+    },
+    "24": {
+      "tested": 11411,
+      "estimated": 11304,
+      "availability": 0.9906230829900973,
+      "medianAbsolutePercentageError": 6.027586772324818,
+      "within10Percent": 0.7115180467091295,
+      "within20Percent": 0.931617126680821,
+      "medianSignedPercentageError": -2.0091024368017685,
+      "bandCoverage": 0.8057324840764332
+    },
+    "36": {
+      "tested": 11411,
+      "estimated": 11324,
+      "availability": 0.9923757777583034,
+      "medianAbsolutePercentageError": 6.030939716862663,
+      "within10Percent": 0.7112327799364182,
+      "within20Percent": 0.9311197456729071,
+      "medianSignedPercentageError": -2.063119421180029,
+      "bandCoverage": 0.8058106676086189
+    }
+  },
+  "defaultLookback": {
+    "byQuarter": {
+      "2024-10": {
+        "tested": 1479,
+        "estimated": 1466,
+        "availability": 0.991210277214334,
+        "medianAbsolutePercentageError": 5.596829027837148,
+        "within10Percent": 0.7442019099590723,
+        "within20Percent": 0.9433833560709414,
+        "medianSignedPercentageError": -2.616469074426086,
+        "bandCoverage": 0.8315143246930423
+      },
+      "2025-01": {
+        "tested": 1535,
+        "estimated": 1519,
+        "availability": 0.9895765472312703,
+        "medianAbsolutePercentageError": 6.324213185185748,
+        "within10Percent": 0.6984858459512837,
+        "within20Percent": 0.9269256089532587,
+        "medianSignedPercentageError": -3.1019837643137476,
+        "bandCoverage": 0.7748518762343647
+      },
+      "2025-04": {
+        "tested": 1566,
+        "estimated": 1554,
+        "availability": 0.9923371647509579,
+        "medianAbsolutePercentageError": 6.319647816532997,
+        "within10Percent": 0.7059202059202059,
+        "within20Percent": 0.9285714285714286,
+        "medianSignedPercentageError": -2.477807045410259,
+        "bandCoverage": 0.8018018018018018
+      },
+      "2025-07": {
+        "tested": 1594,
+        "estimated": 1579,
+        "availability": 0.9905897114178168,
+        "medianAbsolutePercentageError": 6.167215868708403,
+        "within10Percent": 0.7029765674477517,
+        "within20Percent": 0.9316022799240026,
+        "medianSignedPercentageError": -1.8503620273531733,
+        "bandCoverage": 0.799240025332489
+      },
+      "2025-10": {
+        "tested": 1572,
+        "estimated": 1556,
+        "availability": 0.989821882951654,
+        "medianAbsolutePercentageError": 6.235322260705207,
+        "within10Percent": 0.7043701799485861,
+        "within20Percent": 0.9254498714652957,
+        "medianSignedPercentageError": -1.8327916790203518,
+        "bandCoverage": 0.7924164524421594
+      },
+      "2026-01": {
+        "tested": 1187,
+        "estimated": 1176,
+        "availability": 0.9907329401853412,
+        "medianAbsolutePercentageError": 5.8774674196674885,
+        "within10Percent": 0.7100340136054422,
+        "within20Percent": 0.9413265306122449,
+        "medianSignedPercentageError": -2.478363906706443,
+        "bandCoverage": 0.8222789115646258
+      },
+      "2026-04": {
+        "tested": 1218,
+        "estimated": 1206,
+        "availability": 0.9901477832512315,
+        "medianAbsolutePercentageError": 5.843674478815672,
+        "within10Percent": 0.7197346600331676,
+        "within20Percent": 0.9378109452736318,
+        "medianSignedPercentageError": -0.906939746537238,
+        "bandCoverage": 0.8325041459369817
+      },
+      "2026-07": {
+        "tested": 1260,
+        "estimated": 1248,
+        "availability": 0.9904761904761905,
+        "medianAbsolutePercentageError": 5.945889216287487,
+        "within10Percent": 0.7091346153846154,
+        "within20Percent": 0.9198717948717948,
+        "medianSignedPercentageError": -0.755161236178135,
+        "bandCoverage": 0.8012820512820513
+      }
+    },
+    "byType": {
+      "apartment": {
+        "tested": 9800,
+        "estimated": 9766,
+        "availability": 0.9965306122448979,
+        "medianAbsolutePercentageError": 5.739478600877828,
+        "within10Percent": 0.7299815687077617,
+        "within20Percent": 0.9395863198853164,
+        "medianSignedPercentageError": -1.779543554474487,
+        "bandCoverage": 0.8098505017407331
+      },
+      "house": {
+        "tested": 1611,
+        "estimated": 1538,
+        "availability": 0.9546865301055245,
+        "medianAbsolutePercentageError": 7.879502860013268,
+        "within10Percent": 0.5942782834850455,
+        "within20Percent": 0.8810143042912874,
+        "medianSignedPercentageError": -3.6952818649384676,
+        "bandCoverage": 0.7795838751625488
+      }
+    }
+  },
+  "limitations": [
+    "The HMS file is today's revised snapshot, not an archive of what was published at each origin; registration-date cutoffs reduce but do not remove hindsight.",
+    "Test sales use their recorded attributes; real users may enter different or wrong attributes.",
+    "Errors are relative to registered contract prices, which may themselves include unusual terms.",
+    "Eight quarters of one market cycle; performance can differ in other conditions."
+  ]
+}

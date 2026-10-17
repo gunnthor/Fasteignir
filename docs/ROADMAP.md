@@ -17,6 +17,11 @@ below is a proposed continuation; the original conversation's priorities are unk
 - Shareable URL state, Open Graph cards (`/api/card`) and script-free embeds (`/embed`) with sample suppression, period, nominal caveat and data date (16 October 2026).
 - Side-by-side area comparison at `/samanburdur` (16 October 2026).
 - Budget-first historical sales view at `/kaupgeta` (16 October 2026).
+- Market intelligence and property history (17 October 2026, uncommitted at time of writing; see
+  `FASTEIGN_IMPLEMENTATION_PROGRESS.md`): price distributions and percentiles on `/markadur`,
+  property sales history at `/eign`, valuation evidence and sensitivity on `/verdmat`
+  with a rolling-origin backtest, and newly observed sales plus registration delay at
+  `/nyskrad`, backed by durable observation state on the `ingest-state` branch.
 
 ## 1. Restore and verify on this PC
 

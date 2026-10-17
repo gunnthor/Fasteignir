@@ -13,6 +13,7 @@
     "predev": "node scripts/copy-map-worker.mjs",
     "prebuild": "node scripts/check-data.mjs && node scripts/copy-map-worker.mjs",
     "evaluate": "node --import tsx scripts/evaluate-model.ts",
+    "backtest": "node --import tsx scripts/backtest-comparables.ts",
     "format": "prettier --write app components lib scripts tests *.ts *.json *.md .github/workflows/*.yml",
     "format:check": "prettier --check app components lib scripts tests *.ts *.json *.md .github/workflows/*.yml"
   },

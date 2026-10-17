@@ -48,3 +48,57 @@ export function getProperties() {
       throw error;
     }));
 }
+
+// Per-property sales histories kept as unparsed JSON lines (about a third of
+// the heap of parsed tuples); lib/history-lookup parses one per request.
+let history: Promise<Map<string, string>> | undefined;
+export function getHistory() {
+  return (history ??= readFile(
+    path.join(process.cwd(), "data/processed/history.jsonl.gz"),
+  )
+    .then((bytes) => {
+      const index = new Map<string, string>();
+      for (const line of gunzipSync(bytes).toString().split("\n")) {
+        const tab = line.indexOf("\t");
+        if (tab > 0) index.set(line.slice(0, tab), line.slice(tab + 1));
+      }
+      return index;
+    })
+    .catch((error) => {
+      history = undefined;
+      throw error;
+    }));
+}
+
+export type Observed = {
+  trackingSince: string;
+  generatedAt: string;
+  lastRun: import("./observations").RunSummary;
+  runs: import("./observations").RunSummary[];
+  since: string;
+  removed: number;
+  recent: {
+    id: string;
+    propertyId: string;
+    firstSeen: string | null;
+    changedAt: string | null;
+    date: string;
+    registered: string | null;
+    capital: boolean;
+    residential: boolean;
+    usable: boolean;
+    type: import("./types").Sale["type"];
+    municipality: string;
+  }[];
+};
+let observed: Promise<Observed> | undefined;
+export function getObserved() {
+  return (observed ??= readFile(
+    path.join(process.cwd(), "data/processed/observed.json.gz"),
+  )
+    .then((bytes) => JSON.parse(gunzipSync(bytes).toString()) as Observed)
+    .catch((error) => {
+      observed = undefined;
+      throw error;
+    }));
+}
