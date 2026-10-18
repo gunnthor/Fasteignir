@@ -40,12 +40,25 @@ import {
   DEFAULT_VIEW,
   PERIODS as periods,
   areaLabel,
+  filterSummary,
   serializeFilters,
   serializeView,
   distributionLink,
   type View,
 } from "@/lib/share";
 import { SharePanel } from "./share";
+import { SavedSearches } from "./saved-searches";
+import { ExportMenu } from "./export-menu";
+import { profileHref } from "@/lib/slugs";
+import { locationNote, unitLabel } from "@/lib/units";
+import {
+  areasCsv,
+  fileName,
+  trendCsv,
+  trendSvg,
+  type ExportContext,
+  type TrendKind,
+} from "@/lib/exports";
 import { PriceDistribution } from "./price-distribution";
 import { syncUrl } from "./filter-bar";
 const SalesMap = dynamic(() => import("./map"), {
@@ -87,13 +100,8 @@ export function SaleCard({ sale }: { sale: Sale }) {
             ? percent((sale.price / sale.valuation - 1) * 100)
             : "—"}
         </p>
-        <p>
-          {sale.coordinates
-            ? sale.coordinateQuality === "reviewed"
-              ? "Hnit yfirfarin í Staðfangaskrá HMS."
-              : "Opinber staðfangshnit, ekki merkt yfirfarin."
-            : "Áreiðanleg staðsetning á korti ekki tiltæk."}
-        </p>
+        {sale.unitCode !== undefined && <p>{unitLabel(sale.unitCode)}</p>}
+        <p className="micro">{locationNote(sale)}</p>
         <small>Heimild: HMS Kaupskrá fasteigna · Færsla {sale.id}</small>
         <p className="sale-links">
           <Link href={distributionLink(sale)}>Hvar liggur verðið? →</Link>
@@ -146,6 +154,18 @@ export function Explorer({
     setDist(m);
     setValue(v);
   }, []);
+  // Restores a saved search in place.
+  function applyView(v: View) {
+    setFilters(v.filters);
+    setQ(v.q);
+    setQuery(v.q);
+    setMetric(v.metric);
+    setMapLevel(v.level);
+    setTab(v.level);
+    setPoints(v.points);
+    setDist(v.dist);
+    setValue(v.value);
+  }
   const search = serializeView(view).toString();
   // Mirror the view into the address bar so any state can be shared or bookmarked.
   useEffect(() => syncUrl(search), [search]);
@@ -196,6 +216,44 @@ export function Explorer({
     }));
   }
   const selected = areaLabel(filters);
+  const compositionArea = filters.district
+      ? `district:${filters.district}`
+      : filters.postcode
+        ? `postcode:${filters.postcode}`
+        : filters.municipality
+          ? `municipality:${filters.municipality}`
+          : "",
+    compositionHref = `/samsetning?${new URLSearchParams({
+      ...(compositionArea ? { area: compositionArea } : {}),
+      ...(filters.type !== "all" ? { type: filters.type } : {}),
+    })}`;
+  const exportContext: ExportContext | null = data && {
+    area: selected,
+    from: data.from,
+    to: data.to,
+    filters: filterSummary(filters, query),
+    downloadedAt: data.downloadedAt,
+    count: data.summary.count,
+    incomplete: data.incomplete.map((m) => m.month),
+  };
+  const trendExport = (kind: TrendKind) =>
+    exportContext && (
+      <ExportMenu
+        name={(ext) =>
+          fileName(
+            exportContext,
+            kind === "volume"
+              ? "fjoldi"
+              : kind === "area"
+                ? "staerd"
+                : "verd-m2",
+            ext,
+          )
+        }
+        svg={(theme) => trendSvg(data!.trend, kind, exportContext, theme)}
+        csv={() => trendCsv(data!.trend, exportContext)}
+      />
+    );
   const areaList = data
     ? tab === "district"
       ? data.areas
@@ -361,6 +419,8 @@ export function Explorer({
               ["maxArea", "Til m²"],
               ["minBuilt", "Byggt frá"],
               ["maxBuilt", "Byggt til"],
+              ["minPrice", "Verð frá (m.kr.)"],
+              ["maxPrice", "Verð til (m.kr.)"],
             ].map(([key, label]) => (
               <label key={key}>
                 {label}
@@ -375,6 +435,12 @@ export function Explorer({
               </label>
             ))}
           </div>
+          {(filters.minPrice || filters.maxPrice) && (
+            <p className="micro">
+              Verðsía þrengir úrtakið: miðgildi innan verðbils lýsa ekki
+              markaðnum í heild.
+            </p>
+          )}
           <label>
             Herbergi
             <select
@@ -416,7 +482,9 @@ export function Explorer({
           {points && (
             <p className="micro">
               Allt að 1.500 nýjustu staðsettu sölurnar. Þysjaðu inn til að sjá
-              einstakar eignir.
+              einstakar eignir. Punktar eru hnit staðfanga, ekki íbúða;
+              appelsínugulur hringur merkir fleiri sölur á sama staðfangi, t.d.
+              íbúðir í fjölbýlishúsi.
             </p>
           )}
         </>
@@ -457,6 +525,11 @@ export function Explorer({
           {filters.district ? "BORGARHLUTI" : "MARKAÐSYFIRLIT"}
         </span>
         <span className="summary-actions">
+          <SavedSearches
+            view={view}
+            page={dashboard ? "/markadur" : "/"}
+            onOpen={applyView}
+          />
           <SharePanel
             view={view}
             path={dashboard ? "/markadur" : "/"}
@@ -506,7 +579,10 @@ export function Explorer({
       </div>
       <p className="micro">
         Samanburður: {num(data.summary.previousCount)} sölur á jafn löngu fyrra
-        tímabili. Breytt samsetning seldra eigna getur haft áhrif.
+        tímabili. Breytt samsetning seldra eigna getur haft áhrif.{" "}
+        <Link className="inline-link" href={compositionHref}>
+          Skoða samsetningu →
+        </Link>
       </p>
     </>
   );
@@ -597,7 +673,9 @@ export function Explorer({
               {summary}
               <div className="section-title">
                 <h3>Verðþróun</h3>
-                <span>þ.kr./m²</span>
+                <span className="section-tools">
+                  þ.kr./m² {trendExport("ppm")}
+                </span>
               </div>
               <TrendChart data={data.trend} />
               <p className="micro">
@@ -654,6 +732,19 @@ export function Explorer({
                   >
                     <ArrowLeft size={14} /> Til baka í svæðayfirlit
                   </button>
+                  {(filters.district || filters.postcode) && (
+                    <Link
+                      className="text-button"
+                      href={profileHref(
+                        filters.district
+                          ? { kind: "district", id: filters.district }
+                          : { kind: "postcode", id: filters.postcode },
+                      )}
+                    >
+                      <ArrowUpRight size={14} /> Svæðasíða: íbúar, umsvif og
+                      þróun
+                    </Link>
+                  )}
                   {(filters.district || filters.postcode) && (
                     <Link
                       className="text-button"
@@ -783,7 +874,10 @@ export function Explorer({
                   ["area", "Stærð seldra íbúða"],
                 ].map(([kind, title]) => (
                   <article className="panel" key={kind}>
-                    <h3>{title}</h3>
+                    <div className="chart-head">
+                      <h3>{title}</h3>
+                      {trendExport(kind as TrendKind)}
+                    </div>
                     <p className="caption">
                       {kind === "volume"
                         ? "Sölur í hverjum mánuði"
@@ -803,7 +897,29 @@ export function Explorer({
                   ["Póstnúmer", data.postcodes],
                 ].map(([title, areas]) => (
                   <article className="panel" key={String(title)}>
-                    <h3>{String(title)}</h3>
+                    <div className="chart-head">
+                      <h3>{String(title)}</h3>
+                      {exportContext && (
+                        <ExportMenu
+                          name={(ext) =>
+                            fileName(
+                              exportContext,
+                              title === "Sveitarfélög"
+                                ? "sveitarfelog"
+                                : "postnumer",
+                              ext,
+                            )
+                          }
+                          csv={() =>
+                            areasCsv(
+                              areas as AreaStats[],
+                              exportContext,
+                              `Samanburður svæða: ${title}`,
+                            )
+                          }
+                        />
+                      )}
+                    </div>
                     <div className="table-wrap">
                       <table>
                         <thead>
@@ -833,7 +949,17 @@ export function Explorer({
                 ))}
               </div>
               <article className="panel">
-                <h3>Mánaðarleg gögn og úrtaksstærð</h3>
+                <div className="chart-head">
+                  <h3>Mánaðarleg gögn og úrtaksstærð</h3>
+                  {exportContext && (
+                    <ExportMenu
+                      name={(ext) =>
+                        fileName(exportContext, "manadarlegt", ext)
+                      }
+                      csv={() => trendCsv(data.trend, exportContext)}
+                    />
+                  )}
+                </div>
                 <p className="caption">
                   Verð og stærð byggja á þriggja mánaða glugga sem lýkur í
                   viðkomandi mánuði. † líklega ófullgerður mánuður.

@@ -2,7 +2,20 @@
 import { useEffect, useState } from "react";
 import { Info, TriangleAlert } from "lucide-react";
 import { money, num, numberIS, ppm, date } from "@/lib/format";
-import { apiParams, type FilterState } from "@/lib/share";
+import {
+  apiParams,
+  areaLabel,
+  filterSummary,
+  type FilterState,
+} from "@/lib/share";
+import {
+  binLabel as sharedBinLabel,
+  distributionCsv,
+  distributionSvg,
+  fileName,
+  type ExportContext,
+} from "@/lib/exports";
+import { ExportMenu } from "./export-menu";
 import { SAMPLE } from "@/lib/sample";
 import type { Bin, Warning } from "@/lib/distribution";
 import type { PriceDistribution as Result } from "@/lib/price-distribution";
@@ -13,14 +26,8 @@ const unit = { price: "m.kr.", ppm: "þ.kr./m²" } as const;
 const scale = { price: 1e6, ppm: 1e3 } as const;
 const fmt = (m: Metric, v: number | null | undefined) =>
   m === "price" ? money(v) : ppm(v);
-// Axis labels: millions or thousands without the unit.
-const short = (m: Metric, v: number) =>
-  numberIS(v / scale[m], m === "price" ? 1 : 0);
-export function binLabel(m: Metric, b: Bin) {
-  if (b.from === null) return `undir ${short(m, b.to!)}`;
-  if (b.to === null) return `${short(m, b.from)} og yfir`;
-  return `${short(m, b.from)}–${short(m, b.to)}`;
-}
+// Axis labels: millions or thousands without the unit (shared with exports).
+export const binLabel = (m: Metric, b: Bin) => sharedBinLabel(m, b);
 
 const WARNINGS: Record<Warning, (m: Metric) => string> = {
   mixed_types: () =>
@@ -107,6 +114,14 @@ export function PriceDistribution({
       });
     return () => abort.abort();
   }, [filters, q, metric, value]);
+  const context = (d: Result & { downloadedAt?: string }): ExportContext => ({
+    area: areaLabel(filters),
+    from: d.from,
+    to: d.to,
+    filters: filterSummary(filters, q),
+    downloadedAt: d.downloadedAt ?? "",
+    count: d.count,
+  });
   const switchMetric = (m: Metric) => {
     setText("");
     onChange(m, "");
@@ -131,6 +146,19 @@ export function PriceDistribution({
             Hvernig raunverð skiptist innan valinna sía — ekki aðeins miðgildið.
           </p>
         </div>
+        {data && !data.suppressed && (
+          <ExportMenu
+            name={(ext) =>
+              fileName(
+                context(data),
+                metric === "price" ? "dreifing-verd" : "dreifing-m2",
+                ext,
+              )
+            }
+            svg={(theme) => distributionSvg(data, context(data), theme)}
+            csv={() => distributionCsv(data, context(data))}
+          />
+        )}
         <div
           className="segmented"
           role="group"

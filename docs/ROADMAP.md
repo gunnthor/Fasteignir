@@ -22,6 +22,14 @@ below is a proposed continuation; the original conversation's priorities are unk
   property sales history at `/eign`, valuation evidence and sensitivity on `/verdmat`
   with a rolling-origin backtest, and newly observed sales plus registration delay at
   `/nyskrad`, backed by durable observation state on the `ingest-state` branch.
+- Phase 2 (18 October 2026; see `FASTEIGN_PHASE_2_PROGRESS.md`): saved searches with Atom feeds,
+  chart/CSV exports, market composition at `/samsetning`, area profiles at `/svaedi` with
+  verified Reykjavík population and dwellings, FEPILOG unit identity and map-location transparency.
+
+Future ideas recorded during Phase 2 (not started): email alerts for saved searches (needs
+subscriber storage and a mail provider); population/dwelling denominators for other
+municipalities if a source with verified boundaries appears; a separately validated
+mix-adjusted index (needs methodology and approval).
 
 ## 1. Restore and verify on this PC
 

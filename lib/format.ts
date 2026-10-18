@@ -46,6 +46,7 @@ export const strings = {
   market: "Markaðurinn",
   estimate: "Verðmat",
   compare: "Samanburður",
+  areas: "Svæði",
   budget: "Kaupgeta",
   history: "Sölusaga",
   registered: "Nýskráð",

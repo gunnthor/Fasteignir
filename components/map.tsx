@@ -5,6 +5,7 @@ import type { GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { AreaStats, Exploration } from "@/lib/types";
 import { districtName, money, ppm, num, percent, date } from "@/lib/format";
+import { decodeUnitCode, formatUnitCode, locationNote } from "@/lib/units";
 import {
   breaks,
   palette,
@@ -12,6 +13,86 @@ import {
   metricFormat,
   type Metric,
 } from "./map-config";
+const el = (tag: string, text?: string, className?: string) => {
+  const e = document.createElement(tag);
+  if (text !== undefined) e.textContent = text;
+  if (className) e.className = className;
+  return e;
+};
+const shortCode = (raw: unknown) => {
+  const u = decodeUnitCode(String(raw ?? ""));
+  // Non-breaking hyphen keeps "01-0102" on one line.
+  return u ? formatUnitCode(u).replace("-", "‑") : null;
+};
+// Popup for one address point: every sale there, plus how the point was placed.
+// Built with textContent only; property values never become markup.
+function salePopup(sales: GeoJSON.GeoJsonProperties[]) {
+  const first = sales[0] ?? {},
+    root = el("div", undefined, "sale-popup");
+  const addresses = [...new Set(sales.map((s) => String(s?.address)))];
+  root.append(el("strong", addresses.join(" · ")));
+  if (sales.length > 1)
+    root.append(
+      el(
+        "div",
+        `${sales.length} kaupsamningar á sama staðfangi (meðal sala sem birtar eru á kortinu)`,
+        "sale-popup-count",
+      ),
+    );
+  const list = el("ol", undefined, "sale-popup-list");
+  for (const p of sales.slice(0, 40)) {
+    if (!p) continue;
+    const li = el("li"),
+      code = shortCode(p.unitCode);
+    li.append(
+      el("span", `${date(p.date)} · ${money(p.price)}`, "sale-popup-head"),
+      el(
+        "span",
+        [
+          `${num(p.area)} m²`,
+          `${num(p.rooms)} herb.`,
+          p.type === "house" ? "Sérbýli" : "Fjölbýli",
+          ppm(p.ppm),
+          code ? `merking ${code}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      ),
+    );
+    if (sales.length === 1)
+      li.append(
+        el(
+          "span",
+          `Byggt ${p.built ?? "—"} · Fasteignamat ${money(p.valuation)} · Kaupverð / mat: ${p.valuation ? percent((p.price / p.valuation - 1) * 100) : "—"}`,
+        ),
+      );
+    if (/^\d{7}$/.test(String(p.propertyId))) {
+      const a = el("a", "Sölusaga eignar →") as HTMLAnchorElement;
+      a.href = `/eign/${p.propertyId}`;
+      li.append(a);
+    }
+    list.append(li);
+  }
+  root.append(list);
+  if (sales.length > 40)
+    root.append(
+      el("div", `… og ${sales.length - 40} í viðbót`, "sale-popup-count"),
+    );
+  root.append(
+    el(
+      "small",
+      locationNote({
+        coordinates: [0, 0],
+        coordinateQuality: String(first.quality),
+        pointType: first.pointType ?? null,
+        accuracy: first.accuracy ?? null,
+      }),
+    ),
+    el("small", "Heimild: HMS Kaupskrá fasteigna og Staðfangaskrá"),
+  );
+  return root;
+}
+
 export default function SalesMap({
   data,
   metric,
@@ -36,7 +117,34 @@ export default function SalesMap({
     [ready, setReady] = useState(false),
     [error, setError] = useState(""),
     geo = useRef<GeoJSON.FeatureCollection | null>(null),
+    stacks = useRef(new Map<string, GeoJSON.GeoJsonProperties[]>()),
     select = useRef(onSelect);
+  // Groups sales sharing an address point; adds `stack` (the group size) and
+  // `point` (the group key). Clicked features come back with tile-quantized
+  // coordinates, so popups look groups up by `point`, not by coordinates.
+  function stack(points: GeoJSON.FeatureCollection): GeoJSON.FeatureCollection {
+    const groups = new Map<string, GeoJSON.GeoJsonProperties[]>();
+    for (const f of points.features) {
+      const key = (f.geometry as GeoJSON.Point).coordinates.join(","),
+        list = groups.get(key) ?? [];
+      list.push(f.properties);
+      groups.set(key, list);
+    }
+    stacks.current = groups;
+    return {
+      ...points,
+      features: points.features.map((f) => ({
+        ...f,
+        properties: {
+          ...f.properties,
+          point: (f.geometry as GeoJSON.Point).coordinates.join(","),
+          stack: groups.get(
+            (f.geometry as GeoJSON.Point).coordinates.join(","),
+          )!.length,
+        },
+      })),
+    };
+  }
   select.current = onSelect;
   useEffect(() => {
     if (!container.current) return;
@@ -171,6 +279,8 @@ export default function SalesMap({
               "circle-stroke-color": "#ffffff",
             },
           });
+          // Units at one address share the address point; a stacked point is
+          // drawn larger with an orange ring instead of being moved.
           m.addLayer({
             id: "sale-points",
             type: "circle",
@@ -179,9 +289,14 @@ export default function SalesMap({
             minzoom: 12,
             paint: {
               "circle-color": "#235c4e",
-              "circle-radius": 6,
-              "circle-stroke-width": 2,
-              "circle-stroke-color": "#fff",
+              "circle-radius": ["case", [">", ["get", "stack"], 1], 9, 6],
+              "circle-stroke-width": ["case", [">", ["get", "stack"], 1], 3, 2],
+              "circle-stroke-color": [
+                "case",
+                [">", ["get", "stack"], 1],
+                "#d4712a",
+                "#fff",
+              ],
             },
           });
           setReady(true);
@@ -228,36 +343,23 @@ export default function SalesMap({
             });
           });
           m.on("click", "sale-points", (e) => {
-            const f = e.features?.[0],
-              p = f?.properties;
-            if (!f || !p) return;
+            const f = e.features?.[0];
+            if (!f?.properties) return;
             pop.remove();
-            const el = document.createElement("div");
-            el.className = "sale-popup";
-            const title = document.createElement("strong");
-            title.textContent = p.address;
-            el.append(title);
-            for (const line of [
-              money(p.price),
-              `${num(p.area)} m² · ${num(p.rooms)} herb. · ${p.type === "house" ? "Sérbýli" : "Fjölbýli"}`,
-              ppm(p.ppm),
-              `Kaupsamningur ${date(p.date)}`,
-              `Byggt ${p.built ?? "—"} · Fasteignamat ${money(p.valuation)}`,
-              `Kaupverð / mat: ${p.valuation ? percent((p.price / p.valuation - 1) * 100) : "—"}`,
-              p.quality === "reviewed"
-                ? "Hnit yfirfarin í Staðfangaskrá"
-                : "Opinber hnit — ekki merkt yfirfarin",
-              "Heimild: HMS Kaupskrá fasteigna",
-            ]) {
-              const div = document.createElement("div");
-              div.textContent = line;
-              el.append(div);
-            }
-            new maplibregl.Popup()
-              .setLngLat(
-                (f.geometry as GeoJSON.Point).coordinates as [number, number],
+            const at = (f.geometry as GeoJSON.Point).coordinates as [
+                number,
+                number,
+              ],
+              // Every sale at this address point, newest first (the GeoJSON
+              // source returns properties only for the clicked feature).
+              sales = (
+                stacks.current.get(String(f.properties.point)) ?? [f.properties]
               )
-              .setDOMContent(el)
+                .slice()
+                .sort((a, b) => String(b?.date).localeCompare(String(a?.date)));
+            new maplibregl.Popup({ maxWidth: "340px" })
+              .setLngLat(at)
+              .setDOMContent(salePopup(sales))
               .addTo(m);
           });
         } catch {
@@ -324,7 +426,9 @@ export default function SalesMap({
     ]);
     m.setFilter("district-selected", ["==", ["get", "id"], selected]);
     (m.getSource("sales") as GeoJSONSource).setData(
-      showPoints ? data.points : { type: "FeatureCollection", features: [] },
+      showPoints
+        ? stack(data.points)
+        : { type: "FeatureCollection", features: [] },
     );
   }, [ready, data, metric, selected, showPoints, level]);
   useEffect(() => {

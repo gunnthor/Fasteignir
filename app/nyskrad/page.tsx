@@ -4,8 +4,10 @@ import {
   CalendarClock,
   Eye,
   Info,
+  Rss,
   TriangleAlert,
 } from "lucide-react";
+import { SavedSearchOverview } from "@/components/saved-searches";
 import { getObserved, getSnapshot } from "@/lib/server";
 import { newlyObserved, WINDOWS } from "@/lib/newly-observed";
 import { registrationView } from "@/lib/registration";
@@ -24,6 +26,13 @@ export const metadata = {
   title: "Nýskráðar sölur og þinglýsingartími",
   description:
     "Kaupsamningar sem nýlega bættust við kaupskrá HMS, og hversu langur tími líður frá undirritun til þinglýsingar.",
+  alternates: {
+    types: {
+      "application/atom+xml": [
+        { url: "/api/feed", title: "Nýjar færslur · Höfuðborgarsvæðið" },
+      ],
+    },
+  },
 };
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -77,6 +86,10 @@ export default async function NewlyRegistered({ searchParams }: Props) {
           : `${b.from}–${b.to}`,
   }));
   const bootstrapOnly = !observed.runs.some((r) => !r.bootstrap);
+  const feedParams = new URLSearchParams();
+  if (type !== "all") feedParams.set("type", type);
+  if (municipality) feedParams.set("municipality", municipality);
+  const feedLink = `/api/feed${feedParams.size ? `?${feedParams}` : ""}`;
   return (
     <main id="main" className="insight-page registration-page">
       <span className="eyebrow">NÝSKRÁÐ · KAUPSKRÁ HMS</span>
@@ -118,6 +131,32 @@ export default async function NewlyRegistered({ searchParams }: Props) {
         </label>
         <button className="primary-button filter-submit">Sía</button>
       </form>
+      <section className="panel feed-panel" aria-labelledby="feed-title">
+        <h2 id="feed-title">
+          <Rss size={18} /> Fylgjast með nýjum færslum
+        </h2>
+        <p>
+          <a
+            className="primary-link"
+            href={feedLink}
+            type="application/atom+xml"
+          >
+            Gerast áskrifandi að RSS
+          </a>{" "}
+          — Atom-straumur með nýjum færslum{" "}
+          {type === "all" ? "" : `(${TYPE[type].toLocaleLowerCase("is")}) `}
+          {municipality
+            ? `í ${MUNICIPALITIES[municipality]}`
+            : "á höfuðborgarsvæðinu"}
+          . Hver færsla sýnir dagsetningu kaupsamnings, þinglýsingar og hvenær
+          hún sást fyrst; leiðréttingar á eldri færslum birtast ekki sem nýjar.
+        </p>
+        <p className="micro">
+          Þrengri straum (póstnúmer, stærð, verð…) færðu með því að vista leit á
+          kortinu eða markaðssíðunni og afrita RSS-slóð hennar.
+        </p>
+        <SavedSearchOverview />
+      </section>
 
       <section className="panel dates-explainer" aria-labelledby="three-dates">
         <h2 id="three-dates">Þrjár ólíkar dagsetningar</h2>

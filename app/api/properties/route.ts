@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProperties } from "@/lib/server";
-import { searchProperties } from "@/lib/properties";
+import { findProperty, searchProperties, withUnit } from "@/lib/properties";
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   const id = request.nextUrl.searchParams.get("id");
@@ -12,9 +12,9 @@ export async function GET(request: NextRequest) {
   try {
     const rows = await getProperties();
     if (id) {
-      const property = rows.find((p) => p.propertyId === id);
+      const property = findProperty(rows, id);
       return property
-        ? NextResponse.json({ property })
+        ? NextResponse.json({ property: withUnit(rows, property) })
         : NextResponse.json(
             { error: "Eign fannst ekki í kaupskrá." },
             { status: 404 },

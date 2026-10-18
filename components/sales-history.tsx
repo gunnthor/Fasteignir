@@ -13,6 +13,13 @@ import {
 } from "@/lib/format";
 import { distributionLink } from "@/lib/share";
 import type { Caveat, Change, DescribedHistory, Step } from "@/lib/history";
+import type { PropertyRecord, PropertyResult } from "@/lib/properties";
+import {
+  decodeUnitCode,
+  formatUnitCode,
+  unitLabel,
+  type UnitStatus,
+} from "@/lib/units";
 
 const CAVEAT: Record<Caveat, string> = {
   no_price: "Kaupverð vantar í skrána.",
@@ -24,7 +31,7 @@ const CAVEAT: Record<Caveat, string> = {
 };
 const CHANGE: Record<Change, (a: Step["sale"], b: Step["sale"]) => string> = {
   unit: (a, b) =>
-    `Einingarnúmer (FEPILOG) breyttist úr ${a.unitCode} í ${b.unitCode}.`,
+    `Einingarmerking (FEPILOG) breyttist úr ${code(a.unitCode)} í ${code(b.unitCode)}. HMS endurskráir merkingar t.d. þegar matshlutar eru sameinaðir eða þeim skipt.`,
   area: (a, b) => `Skráð stærð breyttist úr ${sqm(a.area)} í ${sqm(b.area)}.`,
   type: () => "Skráð tegund eignar breyttist.",
   rooms: (a, b) =>
@@ -33,6 +40,91 @@ const CHANGE: Record<Change, (a: Step["sale"], b: Step["sale"]) => string> = {
     `Byggingarár breyttist úr ${year(a.built)} í ${year(b.built)}.`,
 };
 const TYPE = { apartment: "Fjölbýli", house: "Sérbýli", other: "Annað" };
+// "01-0201", the raw value when it is not a six-digit code, or "vantar".
+function code(raw: string) {
+  const u = decodeUnitCode(raw);
+  // Non-breaking hyphen keeps "01-0302" on one line.
+  return u
+    ? formatUnitCode(u).replace("-", "‑")
+    : raw.trim()
+      ? `„${raw.trim()}“`
+      : "vantar";
+}
+const UNIT_STATUS: Record<UnitStatus, string> = {
+  unique:
+    "Merkingin er ekki skráð á aðra eign á sama staðfangi, svo hún greinir eignina frá nágrönnum hennar í kaupskrá.",
+  shared_code:
+    "Fleiri en ein eign á sama staðfangi hefur sömu merkingu í kaupskrá. Ekki er hægt að greina þær í sundur af merkingunni einni; berðu saman stærð og fastanúmer.",
+  missing:
+    "Engin einingarmerking er skráð. Eignin er aðeins auðkennd með fastanúmeri.",
+  uninterpretable:
+    "Merkingin er ekki á stöðluðu sex stafa formi og er því sýnd óbreytt, án túlkunar.",
+};
+
+type Unit = PropertyResult & { siblings: PropertyRecord[] };
+function UnitPanel({ unit, latest }: { unit: Unit; latest: string }) {
+  const u = decodeUnitCode(unit.unitCode),
+    others = unit.siblings.filter((s) => s.propertyId !== unit.propertyId);
+  return (
+    <section className="panel unit-panel" aria-labelledby="unit-title">
+      <h2 id="unit-title">Eining og staðfang</h2>
+      <p>
+        <strong>{unitLabel(unit.unitCode)}</strong>
+        {u && (
+          <small>
+            {" "}
+            (matshluti {u.building}, eignarhaldsnúmer {u.floor}
+            {u.position} skv. merkingu HMS)
+          </small>
+        )}
+      </p>
+      <p className={unit.unitStatus === "unique" ? "micro" : "notice"}>
+        {unit.unitStatus !== "unique" && <TriangleAlert size={14} />}{" "}
+        {UNIT_STATUS[unit.unitStatus]}
+      </p>
+      {latest !== unit.unitCode && (
+        <p className="micro">
+          Nýjasti kaupsamningur skráir merkinguna {code(latest)}.
+        </p>
+      )}
+      {unit.addressUnits !== null && others.length > 0 && (
+        <details className="unit-siblings" open={others.length <= 6}>
+          <summary>
+            {others.length === 1
+              ? "Ein önnur eign"
+              : `${others.length} aðrar eignir`}{" "}
+            á sama staðfangi í kaupskrá
+          </summary>
+          <ul>
+            {unit.siblings.map((s) => (
+              <li
+                key={s.propertyId}
+                aria-current={s.propertyId === unit.propertyId || undefined}
+              >
+                {s.propertyId === unit.propertyId ? (
+                  <strong>
+                    {code(s.unitCode)} · {sqm(s.area)} · þessi eign
+                  </strong>
+                ) : (
+                  <Link href={`/eign/${s.propertyId}`}>
+                    {code(s.unitCode)} · {sqm(s.area)}
+                    {s.rooms ? ` · ${num(s.rooms)} herb.` : ""} · fastanúmer{" "}
+                    {s.propertyId}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="micro">
+            Aðeins eignir sem hafa verið seldar frá 2006 eru í kaupskrá. Hæð og
+            rými eru skráningarnúmer HMS, ekki endilega hæð eins og hún er nefnd
+            í húsinu.
+          </p>
+        </details>
+      )}
+    </section>
+  );
+}
 
 const STATUS = {
   confirmed: {
@@ -81,7 +173,7 @@ function StepCard({
       </div>
       <p className="history-attrs">
         {TYPE[s.type]} · {sqm(s.area)} · {num(s.rooms)} herb. · byggt{" "}
-        {year(s.built)} · eining {s.unitCode || "óþekkt"}
+        {year(s.built)} · merking {code(s.unitCode)}
         {s.valuation ? ` · fasteignamat við sölu ${money(s.valuation)}` : ""}
       </p>
       {p ? (
@@ -152,7 +244,13 @@ function StepCard({
   );
 }
 
-export function SalesHistory({ history }: { history: DescribedHistory }) {
+export function SalesHistory({
+  history,
+  unit,
+}: {
+  history: DescribedHistory;
+  unit?: Unit | null;
+}) {
   const status = STATUS[history.status],
     Icon = status.icon,
     latest = history.latest;
@@ -162,8 +260,7 @@ export function SalesHistory({ history }: { history: DescribedHistory }) {
       <h1>{history.address}</h1>
       <p className="intro">
         {history.postcode} {history.municipalityName} · Fastanúmer{" "}
-        {history.propertyId} · Nýjasta skráða eining{" "}
-        {latest.unitCode || "óþekkt"}
+        {history.propertyId} · {unitLabel(latest.unitCode)}
       </p>
       <div className={`history-status panel status-${history.status}`}>
         <Icon size={22} />
@@ -172,6 +269,7 @@ export function SalesHistory({ history }: { history: DescribedHistory }) {
           <p>{status.text(history.sales.length)}</p>
         </div>
       </div>
+      {unit && <UnitPanel unit={unit} latest={latest.unitCode} />}
       <div className="history-actions">
         <Link
           className="primary-button"

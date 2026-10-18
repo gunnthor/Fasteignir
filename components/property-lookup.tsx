@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import type { PropertyRecord } from "@/lib/properties";
+import type { PropertyRecord, PropertyResult } from "@/lib/properties";
+import { unitLabel } from "@/lib/units";
 import { num } from "@/lib/format";
 export function PropertyLookup({
   onSelect,
@@ -8,7 +9,7 @@ export function PropertyLookup({
   onSelect: (property: PropertyRecord) => void;
 }) {
   const [query, setQuery] = useState(""),
-    [items, setItems] = useState<PropertyRecord[]>([]),
+    [items, setItems] = useState<PropertyResult[]>([]),
     [status, setStatus] = useState("");
   useEffect(() => {
     const controller = new AbortController();
@@ -77,10 +78,17 @@ export function PropertyLookup({
               {p.propertyId}
             </span>
             <small>
-              {p.unitCode
-                ? `Eining (FEPILOG): ${p.unitCode}`
-                : "Einingarnúmer vantar"}
+              {unitLabel(p.unitCode)}
+              {p.addressUnits && p.addressUnits > 1
+                ? ` · ${p.addressUnits} eignir á staðfanginu`
+                : ""}
             </small>
+            {p.unitStatus === "shared_code" && (
+              <small className="unit-warning">
+                Önnur eign á sama staðfangi hefur sömu merkingu; athugaðu stærð
+                og fastanúmer.
+              </small>
+            )}
           </button>
         ))}
       </div>

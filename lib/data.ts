@@ -135,5 +135,6 @@ export function normalizeSale(r: Record<string, string>, today: string): Sale {
     coordinates: null,
     coordinateQuality: "unmatched",
     district: null,
+    unitCode: (r.fepilog ?? "").trim(),
   };
 }

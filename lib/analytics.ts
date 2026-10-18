@@ -46,9 +46,15 @@ export function parseFilters(p: URLSearchParams): Filters {
     rooms: numeric("rooms", 0, 0, 5),
     minBuilt: numeric("minBuilt", 1000, 1000, 2100),
     maxBuilt: numeric("maxBuilt", 2100, 1000, 2100),
+    // Whole m.kr. in the URL, ISK internally.
+    minPrice: numeric("minPrice", 0, 0, 5000) * 1e6,
+    maxPrice: p.get("maxPrice")
+      ? numeric("maxPrice", 5000, 1, 5000) * 1e6
+      : Infinity,
     q: (p.get("q") ?? "").trim().slice(0, 100),
   };
   if (
+    f.minPrice > f.maxPrice ||
     f.minArea > f.maxArea ||
     f.minBuilt > f.maxBuilt ||
     (f.from && f.to && f.from > f.to)
@@ -75,6 +81,8 @@ export function matches(s: Sale, f: Filters, ignoreDistrict = false) {
     (ignoreDistrict || !f.district || s.district === f.district) &&
     s.area >= f.minArea &&
     s.area <= f.maxArea &&
+    s.price >= f.minPrice &&
+    s.price <= f.maxPrice &&
     (!f.rooms || (f.rooms === 5 ? (s.rooms ?? 0) >= 5 : s.rooms === f.rooms)) &&
     ((f.minBuilt === 1000 && f.maxBuilt === 2100) ||
       (s.built !== null && s.built >= f.minBuilt && s.built <= f.maxBuilt)) &&

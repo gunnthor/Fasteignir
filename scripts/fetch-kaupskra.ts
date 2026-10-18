@@ -11,6 +11,7 @@ import {
 } from "../lib/data";
 import { buildPropertyIndex } from "../lib/properties";
 import { buildHistoryIndex, packHistory } from "../lib/history";
+import { buildHousing, type Housing } from "../lib/housing";
 import {
   observe,
   parseState,
@@ -30,46 +31,80 @@ const sources = {
   borgarhlutar:
     "https://lukrgatt.reykjavik.is/server/rest/services/Borgarhlutar/MapServer/33/query?where=1%3D1&outFields=*&outSR=4326&f=geojson",
 };
+// Context sources: a failure leaves the context unavailable but never stops
+// ingestion of the official transaction data. See lib/housing.ts and DATA_SOURCES.md.
+const optionalSources = {
+  hverfi: {
+    url: "https://gagnagatt.reykjavik.is/dataset/5c20a363-9db2-4288-a41f-52438654a3d6/resource/5d1230b8-b802-49f3-b861-1ceaea377b86/download/aldursdreifing_ibua.csv",
+    path: "data/raw/hverfi.csv",
+  },
+  // Attributes only: used to verify that the dataset's districts are our polygons.
+  stjornsysluskipting: {
+    url: "https://lukrgatt.reykjavik.is/server/rest/services/OpinGognMorkSkiptingar/Stjornsysluskipting/FeatureServer/0/query?where=1%3D1&outFields=HVERFI,Shape__Area&returnGeometry=false&f=json",
+    path: "data/raw/stjornsysluskipting.json",
+  },
+};
+// Downloads (or, offline, reuses) one source and records its provenance.
+async function source(
+  name: string,
+  url: string,
+  path: string,
+  offline: boolean,
+) {
+  let meta: Record<string, unknown> = { url };
+  if (!offline) {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(120000),
+    });
+    if (!response.ok) throw Error(`${name}: HTTP ${response.status}`);
+    const b = Buffer.from(await response.arrayBuffer());
+    await writeFile(path + ".tmp", b);
+    await rename(path + ".tmp", path);
+    meta = {
+      url,
+      downloadedAt: new Date().toISOString(),
+      lastModified: response.headers.get("last-modified"),
+      etag: response.headers.get("etag"),
+    };
+    await writeFile(path + ".meta.json", JSON.stringify(meta, null, 2));
+  } else {
+    try {
+      meta = JSON.parse(await readFile(path + ".meta.json", "utf8"));
+    } catch {
+      throw Error(
+        `Missing ${path}.meta.json: offline runs require recorded provenance`,
+      );
+    }
+  }
+  const bytes = await readFile(path);
+  return {
+    ...meta,
+    bytes: bytes.length,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+  } as Record<string, unknown> & { sha256: string; downloadedAt?: string };
+}
 async function main() {
   await mkdir("data/raw", { recursive: true });
   await mkdir("data/processed", { recursive: true });
   await mkdir("public/data", { recursive: true });
   const offline = process.argv.includes("--offline");
   const manifest: Record<string, unknown> = {};
-  for (const [name, url] of Object.entries(sources)) {
-    const path = `data/raw/${name}.${["borgarhlutar", "postnumer"].includes(name) ? "geojson" : "csv"}`;
-    let meta: Record<string, unknown> = { url };
-    if (!offline) {
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(120000),
-      });
-      if (!response.ok) throw Error(`${name}: HTTP ${response.status}`);
-      const b = Buffer.from(await response.arrayBuffer());
-      await writeFile(path + ".tmp", b);
-      await rename(path + ".tmp", path);
-      meta = {
-        url,
-        downloadedAt: new Date().toISOString(),
-        lastModified: response.headers.get("last-modified"),
-        etag: response.headers.get("etag"),
-      };
-      await writeFile(path + ".meta.json", JSON.stringify(meta, null, 2));
-    } else {
-      try {
-        meta = JSON.parse(await readFile(path + ".meta.json", "utf8"));
-      } catch {
-        throw Error(
-          `Missing ${path}.meta.json: offline runs require recorded provenance`,
-        );
-      }
+  for (const [name, url] of Object.entries(sources))
+    manifest[name] = await source(
+      name,
+      url,
+      `data/raw/${name}.${["borgarhlutar", "postnumer"].includes(name) ? "geojson" : "csv"}`,
+      offline,
+    );
+  for (const [name, { url, path }] of Object.entries(optionalSources))
+    try {
+      manifest[name] = await source(name, url, path, offline);
+    } catch (e) {
+      console.warn(
+        `Optional source ${name} unavailable: ${(e as Error).message}`,
+      );
+      manifest[name] = { url, error: (e as Error).message };
     }
-    const bytes = await readFile(path);
-    manifest[name] = {
-      ...meta,
-      bytes: bytes.length,
-      sha256: createHash("sha256").update(bytes).digest("hex"),
-    };
-  }
   const csv = decodeCSV(await readFile("data/raw/kaupskra.csv"));
   const required = [
     "faerslunumer",
@@ -128,7 +163,14 @@ async function main() {
     });
   const locationCache = new Map<
     string,
-    Pick<Sale, "coordinates" | "coordinateQuality" | "district">
+    Pick<
+      Sale,
+      | "coordinates"
+      | "coordinateQuality"
+      | "district"
+      | "pointType"
+      | "accuracy"
+    >
   >();
   for (let i = 0; i < rows.length; i++) {
     const s = rows[i],
@@ -154,6 +196,8 @@ async function main() {
       }
       let coordinates: [number, number] | null = null,
         district: string | null = null,
+        pointType: number | null = null,
+        accuracy: number | null = null,
         coordinateQuality = candidates.length
           ? "ambiguous_or_rejected"
           : "unmatched";
@@ -165,13 +209,25 @@ async function main() {
         ];
         coordinateQuality =
           a.yfirfarid === "1" ? "reviewed" : "official_unreviewed";
+        // TEGHNIT 0–5 and NAKV_XY in metres; "0" or blank means not stated.
+        pointType = /^[0-5]$/.test(a.teghnit?.trim() ?? "")
+          ? Number(a.teghnit)
+          : null;
+        const error = numberValue(a.nakv_xy);
+        accuracy = error && error > 0 ? error : null;
         const found = geo.features.filter((f) =>
           booleanPointInPolygon(coordinates!, f),
         );
         if (s.municipality === "0000" && found.length === 1)
           district = String(found[0].properties?.HVERFI);
       }
-      locationCache.set(key, { coordinates, coordinateQuality, district });
+      locationCache.set(key, {
+        coordinates,
+        coordinateQuality,
+        district,
+        pointType,
+        accuracy,
+      });
     }
     Object.assign(s, locationCache.get(key));
   }
@@ -224,6 +280,39 @@ async function main() {
     };
   }
   const valid = rows.filter((s) => s.capital && s.usable);
+  const housing = await (async (): Promise<Housing> => {
+    const h = manifest.hverfi as {
+      sha256?: string;
+      url: string;
+      downloadedAt?: string;
+    };
+    if (
+      !h?.sha256 ||
+      !(manifest.stjornsysluskipting as { sha256?: string })?.sha256
+    )
+      return {
+        status: "unavailable",
+        reason: "Gögn Reykjavíkurborgar ekki tiltæk",
+      };
+    try {
+      const layer = JSON.parse(
+        await readFile(optionalSources.stjornsysluskipting.path, "utf8"),
+      ) as { features?: { attributes: Record<string, unknown> }[] };
+      return buildHousing(
+        decodeCSV(await readFile(optionalSources.hverfi.path)).records,
+        layer.features?.map((f) => f.attributes) ?? null,
+        geo.features.map((f) => f.properties ?? {}),
+        { url: h.url, downloadedAt: h.downloadedAt ?? null, sha256: h.sha256 },
+      );
+    } catch (e) {
+      return {
+        status: "unavailable",
+        reason: `Ekki lesanleg: ${(e as Error).message}`,
+      };
+    }
+  })();
+  if (housing.status !== "ok")
+    console.warn(`Housing context unavailable: ${housing.reason}`);
   const properties = buildPropertyIndex(rows, csv.records);
   const history = buildHistoryIndex(rows, csv.records);
   const observation = await advanceObservations(csv.records, today);
@@ -252,6 +341,16 @@ async function main() {
   };
   const report = {
     propertyCount: properties.length,
+    housing:
+      housing.status === "ok"
+        ? { status: "ok", year: housing.year }
+        : { status: "unavailable", reason: housing.reason },
+    locationMetadata: {
+      pointType: count((s) =>
+        String(s.coordinates ? (s.pointType ?? "none") : "unlocated"),
+      ),
+      accuracyStated: valid.filter((s) => s.accuracy).length,
+    },
     historyProperties: history.length,
     historySales: history.reduce((n, h) => n + h.sales.length, 0),
     observation: {
@@ -326,6 +425,7 @@ async function main() {
       ),
     ],
     ["data/processed/observed.json.gz", gzipSync(JSON.stringify(observed))],
+    ["data/processed/housing.json", JSON.stringify(housing, null, 1)],
     ["data/processed/sales.json.gz", gzipSync(JSON.stringify(valid))],
     ["data/processed/audit.json.gz", gzipSync(JSON.stringify(rows))],
     ["data/processed/report.json", JSON.stringify(report, null, 2)],

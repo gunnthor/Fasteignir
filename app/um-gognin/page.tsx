@@ -203,12 +203,76 @@ export default function About() {
         ekki hversu margar óskráðar sölur eru til. Biðtími er ekki sölutími á
         markaði.
       </p>
+      <h2>Vistaðar leitir og RSS-straumar</h2>
+      <p>
+        Vistaðar leitir eru geymdar í vafranum þínum (localStorage), ekki á
+        aðgangi eða netþjóni; þær hverfa ef vafragögnum er eytt. Síur sem ekki
+        eiga lengur við eru felldar niður þegar leit er opnuð. RSS-straumur
+        (Atom) fyrir leit er reiknaður á netþjóni úr síunum í slóðinni einni:
+        allt að 50 nýjustu gildu kaupsamningar sem Fasteign sá fyrst í daglegri
+        kaupskrá HMS síðustu 60 daga, óháð tímabilssíu. Hver færsla sýnir
+        dagsetningu kaupsamnings, þinglýsingar og hvenær hún sást fyrst, og
+        leiðréttingar á eldri færslum birtast ekki sem nýjar.
+        Tölvupósttilkynningar eru ekki í boði.
+      </p>
+
+      <h2>Niðurhal mynda og gagna</h2>
+      <p>
+        Myndrit má sækja sem PNG eða SVG og töflur sem CSV. Skrárnar eru búnar
+        til úr sömu samanteknu tölum og sjást á síðunni, með heiti, svæði,
+        tímabili, síum, úrtaksstærð, heimild og dagsetningu gagna. Sömu reglur
+        gilda: miðgildi er ekki birt undir 5 sölum og engin súla í dreifingu
+        geymir 1–4 sölur. Einstakir kaupsamningar eru ekki í boði sem
+        heildarniðurhal. CSV-skrár eru UTF-8 með semíkommu milli dálka og kommu
+        sem tugabrot; línur sem hefjast á „#“ eru lýsigögn.
+      </p>
+
+      <h2>Samsetning seldra eigna</h2>
+      <p>
+        Miðgildi söluverðs getur breyst þótt verð sambærilegra eigna breytist
+        lítið, ef hlutfall stórra, nýrra eða dýrra eigna meðal seldra eigna
+        breytist. Samsetningarsíðan ber saman tvö tímabil eftir tegund, stærð,
+        herbergjafjölda, byggingarári og svæði, og sýnir miðgildi innan hópa með
+        a.m.k. 20 sölur. Hún er lýsandi: hún er ekki verðvísitala, er ekki
+        leiðrétt fyrir samsetningu og metur ekki hversu stór hluti breytingar
+        stafar af samsetningu.
+      </p>
+
+      <h2>Svæðasíður, íbúar og íbúðir</h2>
+      <p>
+        Svæðasíður ná yfir sveitarfélög, borgarhluta Reykjavíkur og póstnúmer.
+        Fyrir borgarhluta Reykjavíkur eru birtir íbúa- og íbúðafjöldi úr opnum
+        gögnum Reykjavíkurborgar (gagnasafnið „Hverfi“ á gagnagatt.reykjavik.is,
+        eftir stjórnsýsluskiptingu). Gögnin eru aðeins notuð eftir að staðfest
+        hefur verið að mörk hverfa þar séu þau sömu og borgarhlutamörkin sem
+        sölur eru staðsettar eftir. Leyfi gagnasafnsins er ekki tilgreint á
+        gagnagáttinni; það er opið og birt af borginni og vísað er til uppruna.
+        „Skráðar sölur á 1.000 íbúðir“ er fjöldi gildra kaupsamninga á 12 heilum
+        mánuðum deilt með íbúðafjölda, ekki hlutfall íbúða sem seldust. Fyrir
+        póstnúmer og önnur sveitarfélög fannst ekkert gagnasafn með samræmdum
+        mörkum, svo slíkar tölur eru ekki birtar.
+      </p>
+
+      <h2>Einingar í fjölbýli og staðsetning á korti</h2>
+      <p>
+        Merking eignar (FEPILOG í kaupskrá) er matshlutanúmer og
+        eignarhaldsnúmer aðaleignar, t.d. 01-0302: matshluti 01, hæðarnúmer 03,
+        rými 02 samkvæmt skráningarkerfi fasteignaskrár. Aðeins sex stafa
+        merkingar eru túlkaðar; aðrar eru sýndar óbreyttar. Ef tvær eignir á
+        sama staðfangi bera sömu merkingu er það tekið fram í stað þess að
+        giska. Punktar á korti eru hnit staðfangs úr Staðfangaskrá HMS, ekki
+        staðsetning einstakrar íbúðar, og allar eignir á staðfanginu deila
+        punkti. Þar sem Staðfangaskrá tilgreinir tegund hnits (t.d.
+        megininngangur eða áætlaður miðpunktur), yfirferð eða skekkjumörk er það
+        sýnt. Sölur án áreiðanlegra hnita eru áfram í öllum tölum og listum.
+      </p>
+
       <h2>Persónuvernd og endurnotkun</h2>
       <p>
         Vefurinn birtir upplýsingar um eignir og opinbera kaupsamninga. Við
         reynum ekki að bera kennsl á kaupendur, seljendur eða íbúa. Engin
-        innskráning er nauðsynleg. Útlitsval vistast í vafranum. Kortaflísar eru
-        sóttar til kortaþjónustu.
+        innskráning er nauðsynleg. Útlitsval og vistaðar leitir vistast í
+        vafranum. Kortaflísar eru sóttar til kortaþjónustu.
       </p>
       <p>
         Endurnotkun HMS-gagna er háð{" "}

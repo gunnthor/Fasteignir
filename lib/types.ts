@@ -26,6 +26,13 @@ export type Sale = {
   coordinates: [number, number] | null;
   coordinateQuality: string;
   district: string | null;
+  // Optional: absent in snapshots made before October 2026.
+  // FEPILOG verbatim (lib/units decodes it).
+  unitCode?: string;
+  // Staðfangaskrá TEGHNIT (0–5) and NAKV_XY (estimated error in metres) of the
+  // address point; null when not stated.
+  pointType?: number | null;
+  accuracy?: number | null;
 };
 export type Filters = {
   months: number;
@@ -40,6 +47,9 @@ export type Filters = {
   rooms: number;
   minBuilt: number;
   maxBuilt: number;
+  // Total contract price in ISK; 0 and Infinity when not restricted.
+  minPrice: number;
+  maxPrice: number;
   q: string;
 };
 export type Stats = {
@@ -66,7 +76,7 @@ export type Exploration = {
   areas: AreaStats[];
   postcodes: AreaStats[];
   municipalities: AreaStats[];
-  trend: ({ month: string } & Stats)[];
+  trend: ({ month: string; volume: number } & Stats)[];
   recent: Sale[];
   points: GeoJSON.FeatureCollection;
   pointCount: number;

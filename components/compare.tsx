@@ -27,6 +27,7 @@ import type { AreaOption } from "@/lib/compare";
 import type { Stats } from "@/lib/types";
 import { FilterBar, syncUrl } from "./filter-bar";
 import { DataTable } from "./data-table";
+import { profileHref } from "@/lib/slugs";
 const CompareTrendChart = dynamic(
   () => import("./insight-charts").then((m) => m.CompareTrendChart),
   { ssr: false, loading: () => <div className="chart skeleton" /> },
@@ -169,6 +170,9 @@ function SideCard({ s, side }: { s: Side; side: "a" | "b" }) {
           <strong>{num(s.summary.rooms)}</strong>
         </div>
       </div>
+      <Link className="text-button" href={profileHref(s.area)}>
+        Svæðasíða: {s.name} →
+      </Link>
     </article>
   );
 }

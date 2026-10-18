@@ -61,6 +61,7 @@ export function Header() {
         {[
           ["/", strings.map],
           ["/markadur", strings.market],
+          ["/svaedi", strings.areas],
           ["/samanburdur", strings.compare],
           ["/kaupgeta", strings.budget],
           ["/verdmat", strings.estimate],
@@ -70,7 +71,9 @@ export function Header() {
         ].map(([href, label]) => (
           <Link
             aria-current={
-              path === href || (href === "/eign" && path.startsWith("/eign/"))
+              path === href ||
+              ((href === "/eign" || href === "/svaedi") &&
+                path.startsWith(`${href}/`))
                 ? "page"
                 : undefined
             }

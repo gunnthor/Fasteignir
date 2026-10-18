@@ -1,4 +1,5 @@
 import type { Sale } from "./types";
+import { compareUnits, siblingsOf, unitStatus } from "./units";
 export type PropertyRecord = Pick<
   Sale,
   | "propertyId"
@@ -9,7 +10,12 @@ export type PropertyRecord = Pick<
   | "rooms"
   | "built"
   | "type"
-> & { unitCode: string; recordedAt: string };
+> & {
+  unitCode: string;
+  recordedAt: string;
+  // Staðfang (HEINUM) of the latest contract; absent in older snapshots.
+  heinum?: string;
+};
 export function buildPropertyIndex(
   rows: Sale[],
   raw: Record<string, string>[],
@@ -40,6 +46,7 @@ export function buildPropertyIndex(
       type: s.type,
       unitCode: raw[i]?.fepilog ?? "",
       recordedAt: s.date,
+      heinum: s.heinum,
     });
   });
   return [...index.values()].sort(
@@ -63,7 +70,7 @@ export function searchProperties(
   const words = fold(query.trim())
     .replace(/(\d+)\s+([a-z])\b/g, "$1$2")
     .split(/\s+/);
-  const matches = rows.filter((p) => {
+  const found = rows.filter((p) => {
     const address = fold(p.address).replace(/(\d+)\s+([a-z])\b/g, "$1$2");
     const houseNumbers = address.match(/\d+[a-z]?/g) ?? [];
     const location = `${address} ${fold(p.municipalityName)}`;
@@ -85,9 +92,35 @@ export function searchProperties(
       return location.includes(word);
     });
   });
+  // Units at one address in register order (building, floor, position).
+  const matches = found.sort(
+    (a, b) =>
+      a.address.localeCompare(b.address, "is") ||
+      a.postcode.localeCompare(b.postcode) ||
+      compareUnits(a, b),
+  );
   return {
-    properties: matches.slice(0, limit),
+    properties: matches.slice(0, limit).map((p) => withUnit(rows, p)),
     total: matches.length,
     hasMore: matches.length > limit,
   };
+}
+
+// A record with how confidently its unit can be told apart at its address.
+export function withUnit(rows: PropertyRecord[], p: PropertyRecord) {
+  const siblings = siblingsOf(rows, p);
+  return {
+    ...p,
+    unitStatus: unitStatus(p, siblings),
+    // Properties recorded at the same staðfang (HEINUM), this one included.
+    addressUnits: p.heinum ? siblings.length : null,
+  };
+}
+export type PropertyResult = ReturnType<typeof withUnit>;
+
+const byId = new WeakMap<PropertyRecord[], Map<string, PropertyRecord>>();
+export function findProperty(rows: PropertyRecord[], id: string) {
+  let m = byId.get(rows);
+  if (!m) byId.set(rows, (m = new Map(rows.map((p) => [p.propertyId, p]))));
+  return m.get(id) ?? null;
 }

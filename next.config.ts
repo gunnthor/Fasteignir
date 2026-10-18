@@ -10,6 +10,7 @@ const config: NextConfig = {
     ],
     "/eign/*": [
       "./data/processed/history.jsonl.gz",
+      "./data/processed/properties.json.gz",
       "./data/processed/sales.json.gz",
       "./data/processed/report.json",
     ],
@@ -18,9 +19,23 @@ const config: NextConfig = {
       "./data/processed/observed.json.gz",
       "./data/processed/report.json",
     ],
+    "/svaedi/*": [
+      "./data/processed/sales.json.gz",
+      "./data/processed/report.json",
+      "./data/processed/housing.json",
+      "./public/data/areas.geojson",
+    ],
     // Pages read the snapshot for share metadata and area lists; /embed renders cards.
     ...Object.fromEntries(
-      ["/", "/markadur", "/samanburdur", "/embed"].map((r) => [
+      [
+        "/",
+        "/markadur",
+        "/samanburdur",
+        "/embed",
+        "/samsetning",
+        "/svaedi",
+        "/sitemap.xml",
+      ].map((r) => [
         r,
         ["./data/processed/sales.json.gz", "./data/processed/report.json"],
       ]),

@@ -23,6 +23,9 @@ export const DEFAULT_FILTERS = {
   rooms: "",
   minBuilt: "",
   maxBuilt: "",
+  // Total price in whole m.kr.
+  minPrice: "",
+  maxPrice: "",
   from: "",
   to: "",
 };
@@ -85,7 +88,8 @@ export function parseFilterState(source: ParamSource): FilterState {
     return lo && hi && +lo > +hi ? ["", ""] : [lo, hi];
   };
   const [minArea, maxArea] = pair("minArea", "maxArea", 0, 10000),
-    [minBuilt, maxBuilt] = pair("minBuilt", "maxBuilt", 1000, 2100);
+    [minBuilt, maxBuilt] = pair("minBuilt", "maxBuilt", 1000, 2100),
+    [minPrice, maxPrice] = pair("minPrice", "maxPrice", 1, 5000);
   let from = get("from"),
     to = get("to"),
     months = get("months");
@@ -109,6 +113,8 @@ export function parseFilterState(source: ParamSource): FilterState {
     rooms: int("rooms", 1, 5),
     minBuilt,
     maxBuilt,
+    minPrice,
+    maxPrice,
   };
 }
 export function parseView(source: ParamSource): View {
@@ -151,6 +157,8 @@ export function serializeFilters(
     "maxArea",
     "minBuilt",
     "maxBuilt",
+    "minPrice",
+    "maxPrice",
   ] as const)
     if (f[key] && f[key] !== DEFAULT_FILTERS[key]) p.set(key, f[key]);
   return p;
@@ -198,6 +206,8 @@ export function filterSummary(f: FilterState, q = "") {
     (f.minArea || f.maxArea) &&
       `${range(f.minArea, f.maxArea, (s) => numberIS(+s))} m²`,
     (f.minBuilt || f.maxBuilt) && `byggt ${range(f.minBuilt, f.maxBuilt)}`,
+    (f.minPrice || f.maxPrice) &&
+      `kaupverð ${range(f.minPrice, f.maxPrice, (s) => numberIS(+s))} m.kr.`,
     q && `leit: „${q}“`,
   ].filter(Boolean) as string[];
 }
