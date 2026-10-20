@@ -75,5 +75,16 @@
   "restored": 0,
   "removed": 0,
   "unchanged": 233075
+ },
+ {
+  "date": "2026-10-20",
+  "bootstrap": false,
+  "rows": 233115,
+  "new": 40,
+  "modified": 23,
+  "revised": 0,
+  "restored": 0,
+  "removed": 0,
+  "unchanged": 233052
  }
 ]
